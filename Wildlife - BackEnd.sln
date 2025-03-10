@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wildlife - BackEnd", "Wildlife - BackEnd\Wildlife - BackEnd.csproj", "{AEA9BA2F-C680-4A32-AEEB-679E18686CD9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wildlife_BLL", "BLL\Wildlife_BLL.csproj", "{049D8343-0200-4690-9C9B-DAA3047EB56E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wildlife_DAL", "DAL\Wildlife_DAL.csproj", "{AF620DF3-E9BA-491A-8B9C-E5C2EFA327CE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AEA9BA2F-C680-4A32-AEEB-679E18686CD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEA9BA2F-C680-4A32-AEEB-679E18686CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEA9BA2F-C680-4A32-AEEB-679E18686CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEA9BA2F-C680-4A32-AEEB-679E18686CD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{049D8343-0200-4690-9C9B-DAA3047EB56E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{049D8343-0200-4690-9C9B-DAA3047EB56E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{049D8343-0200-4690-9C9B-DAA3047EB56E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{049D8343-0200-4690-9C9B-DAA3047EB56E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF620DF3-E9BA-491A-8B9C-E5C2EFA327CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF620DF3-E9BA-491A-8B9C-E5C2EFA327CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF620DF3-E9BA-491A-8B9C-E5C2EFA327CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF620DF3-E9BA-491A-8B9C-E5C2EFA327CE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
