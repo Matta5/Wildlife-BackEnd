@@ -4,9 +4,9 @@ using Wildlife_DAL.Entities;
 
 namespace Wildlife_DAL.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class AppDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<UserEntity> Users { get; set; }
 
@@ -14,5 +14,6 @@ namespace Wildlife_DAL.Data
         {
             base.OnModelCreating(modelBuilder);
         }
+
     }
 }
