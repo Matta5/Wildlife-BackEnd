@@ -8,5 +8,8 @@
         public string PasswordHash { get; set; }
         public string? ProfilePicture { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiry { get; set; }
     }
+
 }

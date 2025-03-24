@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using Wildlife_BLL.DTO;
 using Wildlife_BLL;
 
-namespace Wildlife_PL.Controllers
+namespace Wildlife_API.Controllers
 {
     [ApiController]
-    [Route("api/users")]
+    [Route("users")]
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
@@ -22,7 +21,13 @@ namespace Wildlife_PL.Controllers
         [HttpGet("{id}")]
         public IActionResult GetUserById(int id)
         {
-            return Ok(_userService.GetUserById(id));
+            UserDTO? user = _userService.GetUserById(id);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok(user);
         }
         [HttpPost]
         public IActionResult CreateUser(CreateEditUserDTO userDTO)

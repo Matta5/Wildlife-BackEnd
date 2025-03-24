@@ -3,12 +3,14 @@ using Wildlife_BLL.Interfaces;
 using Wildlife_BLL.DTO;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 
 namespace Wildlife_BLL
 {
     public class UserService
     {
         private readonly IUserRepository _userRepository;
+
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
@@ -17,25 +19,14 @@ namespace Wildlife_BLL
         {
             return _userRepository.GetAllUsers();
         }
-        public UserDTO GetUserById(int id)
+        public UserDTO? GetUserById(int id)
         {
             return _userRepository.GetUserById(id);
         }
         public bool CreateUser(CreateEditUserDTO userDTO)
         {
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                // ComputeHash - returns byte array
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(userDTO.PasswordHash));
-
-                // Convert byte array to a string
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    builder.Append(bytes[i].ToString("x2"));
-                }
-                userDTO.PasswordHash = builder.ToString();
-            }
+            var passwordHasher = new PasswordHasher<object>();
+            userDTO.Password = passwordHasher.HashPassword(null, userDTO.Password);
 
             return _userRepository.CreateUser(userDTO);
         }
@@ -46,7 +37,49 @@ namespace Wildlife_BLL
         }
         public bool UpdateUser(int id, CreateEditUserDTO userDTO)
         {
+            var passwordHasher = new PasswordHasher<object>();
+            userDTO.Password = passwordHasher.HashPassword(null, userDTO.Password);
+
             return _userRepository.UpdateUser(id, userDTO);
+        }
+
+        public UserDTO? GetUserByUsername(string username)
+        {
+            return _userRepository.GetUserByUsername(username);
+        }
+
+        public UserDTO? GetUserByRefreshToken(string refreshToken)
+        {
+            return _userRepository.GetUserByRefreshToken(refreshToken);
+        }
+
+        public bool VerifyPassword(string password, string passwordHash)
+        {
+            var passwordHasher = new PasswordHasher<object>();
+
+            var result = passwordHasher.VerifyHashedPassword(null, passwordHash, password);
+
+            return result == PasswordVerificationResult.Success;
+        }
+
+        public void UpdateRefreshToken(int userId, string refreshToken, DateTime expiry)
+        {
+            UserDTO user = _userRepository.GetUserById(userId);
+            if (user == null)
+                throw new ArgumentException("User not found");
+
+            CreateEditUserDTO createEditUserDTO = new CreateEditUserDTO
+            {
+                Username = user.Username,
+                Email = user.Email,
+                Password = user.PasswordHash,
+                ProfilePicture = user.ProfilePicture,
+                CreatedAt = user.CreatedAt,
+                RefreshToken = refreshToken, // Assign new refresh token
+                RefreshTokenExpiry = expiry  // Assign new expiry date
+            };
+
+            _userRepository.UpdateUser(user.Id, createEditUserDTO); // Assuming this method commits the changes to the database
         }
 
     }

@@ -33,7 +33,7 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public UserDTO GetUserById(int id)
+    public UserDTO? GetUserById(int id)
     {
         try
         {
@@ -41,7 +41,7 @@ public class UserRepository : IUserRepository
             
             if (user == null)
             {
-                throw new Exception($"User not found");
+                return null;
             }
 
             return new UserDTO
@@ -49,6 +49,7 @@ public class UserRepository : IUserRepository
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
+                PasswordHash = user.PasswordHash,
                 ProfilePicture = user.ProfilePicture,
                 CreatedAt = user.CreatedAt
             };
@@ -74,7 +75,7 @@ public class UserRepository : IUserRepository
             {
                 Username = userDTO.Username,
                 Email = userDTO.Email,
-                PasswordHash = userDTO.PasswordHash,
+                PasswordHash = userDTO.Password,
                 ProfilePicture = userDTO.ProfilePicture,
                 CreatedAt = userDTO.CreatedAt
             };
@@ -123,9 +124,11 @@ public class UserRepository : IUserRepository
 
             user.Username = userDTO.Username;
             user.Email = userDTO.Email;
-            user.PasswordHash = userDTO.PasswordHash;
+            user.PasswordHash = userDTO.Password;
             user.ProfilePicture = userDTO.ProfilePicture;
             user.CreatedAt = userDTO.CreatedAt;
+            user.RefreshToken = userDTO.RefreshToken;
+            user.RefreshTokenExpiry = userDTO.RefreshTokenExpiry;
 
             _context.SaveChanges();
             return true;
@@ -133,6 +136,55 @@ public class UserRepository : IUserRepository
         catch (Exception e)
         {
             throw new Exception("An error occurred while updating user", e);
+        }
+    }
+
+    public UserDTO? GetUserByUsername(string username)
+    {
+        try
+        {
+            UserEntity? user = _context.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null)
+            {
+                return null;
+            }
+            return new UserDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                PasswordHash = user.PasswordHash,
+                ProfilePicture = user.ProfilePicture,
+                CreatedAt = user.CreatedAt
+            };
+        }
+        catch (Exception e)
+        {
+            throw new Exception("An error occurred while getting the user by username", e);
+        }
+    }
+
+    public UserDTO? GetUserByRefreshToken(string refreshToken)
+    {
+        try
+        {
+            UserEntity? user = _context.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
+            if (user == null)
+            {
+                return null;
+            }
+            return new UserDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                ProfilePicture = user.ProfilePicture,
+                CreatedAt = user.CreatedAt
+            };
+        }
+        catch (Exception e)
+        {
+            throw new Exception("An error occurred while getting the user by refresh token", e);
         }
     }
 }

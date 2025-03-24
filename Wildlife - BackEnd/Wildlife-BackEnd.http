@@ -1,6 +1,0 @@
-@Wildlife___BackEnd_HostAddress = http://localhost:5295
-
-GET {{Wildlife___BackEnd_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

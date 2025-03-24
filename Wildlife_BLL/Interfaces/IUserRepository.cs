@@ -10,6 +10,8 @@ namespace Wildlife_BLL.Interfaces
         bool CreateUser(CreateEditUserDTO userDTO);
         bool DeleteUser(int id);
         bool UpdateUser(int id, CreateEditUserDTO userDTO);
+        UserDTO? GetUserByUsername(string username);
+        UserDTO? GetUserByRefreshToken(string refreshToken);   
 
     }
 }
