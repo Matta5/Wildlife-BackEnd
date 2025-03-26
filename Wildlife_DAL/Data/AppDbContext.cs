@@ -9,6 +9,7 @@ namespace Wildlife_DAL.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<UserEntity> Users { get; set; }
+        public DbSet<ObservationEntity> Observations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

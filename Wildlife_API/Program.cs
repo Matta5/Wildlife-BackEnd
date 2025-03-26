@@ -60,6 +60,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
+builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
+builder.Services.AddScoped<ObservationService>();
+
 builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddControllers();

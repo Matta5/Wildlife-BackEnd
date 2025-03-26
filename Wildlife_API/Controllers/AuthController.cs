@@ -30,10 +30,8 @@ public class AuthController : ControllerBase
         var refreshToken = _authService.GenerateRefreshToken();
         var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
 
-        // Store refresh token securely
         _userService.UpdateRefreshToken(user.Id, refreshToken, refreshTokenExpiry);
 
-        // Set JWT in HttpOnly cookie
         Response.Cookies.Append("jwt", accessToken, new CookieOptions
         {
             HttpOnly = true,
