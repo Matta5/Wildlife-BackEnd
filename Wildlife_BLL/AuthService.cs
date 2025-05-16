@@ -22,8 +22,8 @@ namespace Wildlife_BLL
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ✅ This ensures correct claim type
-                new Claim(JwtRegisteredClaimNames.Sub, user.Username)
+                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, user.Username)
             };
 
             var token = new JwtSecurityToken(

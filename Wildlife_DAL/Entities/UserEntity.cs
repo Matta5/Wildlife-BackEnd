@@ -8,7 +8,9 @@
         public string PasswordHash { get; set; }
         public string? ProfilePicture { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public string RefreshToken { get; set; }
-        public DateTime RefreshTokenExpiry { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
+
+        public ICollection<ObservationEntity> Observations { get; set; } = new List<ObservationEntity>();
     }
 }

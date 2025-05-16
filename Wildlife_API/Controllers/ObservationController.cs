@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Wildlife_BLL.DTO;
 using Wildlife_BLL;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Wildlife_BackEnd.Controllers
 {
@@ -41,10 +42,10 @@ namespace Wildlife_BackEnd.Controllers
 
         private int? GetUserIdFromClaims()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdClaim == null) return null;
 
-            if (int.TryParse(userIdClaim.Value, out int userId))
+            if (int.TryParse(userIdClaim, out int userId))
             {
                 return userId;
             }

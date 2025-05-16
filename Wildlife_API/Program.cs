@@ -13,13 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 DotEnv.Load();
 
-Console.WriteLine($"Connection String: {DotEnv.Read()}");
-
-
 var env = DotEnv.Read();
 
-var connectionString = env["DEFAULT_CONNECTION"]
-    ?? throw new InvalidOperationException("Connection string couldnt be found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));

@@ -32,13 +32,6 @@ public class AuthController : ControllerBase
 
         _userService.UpdateRefreshToken(user.Id, refreshToken, refreshTokenExpiry);
 
-        Response.Cookies.Append("jwt", accessToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict
-        });
-
         var authenticatedUserDto = new AuthenticatedUserDTO
         {
             Id = user.Id,
@@ -47,6 +40,8 @@ public class AuthController : ControllerBase
             ProfilePicture = user.ProfilePicture,
             CreatedAt = user.CreatedAt
         };
+
+        Response.Headers.Append("Authorization", $"Bearer {accessToken}");
 
         return Ok(new { message = "Login successful", user = authenticatedUserDto, refreshToken });
     }
