@@ -64,20 +64,16 @@ public class UserRepository : IUserRepository
     {
         try
         {
-            bool usernameExists = _context.Users.Any(u => u.Username == userDTO.Username);
-
-            if (usernameExists)
-            {
-                throw new Exception($"Username with the name {userDTO.Username} already exists");
-            }
-
             UserEntity user = new UserEntity
             {
                 Username = userDTO.Username,
                 Email = userDTO.Email,
                 PasswordHash = userDTO.Password,
                 ProfilePicture = userDTO.ProfilePicture,
-                CreatedAt = userDTO.CreatedAt
+                CreatedAt = userDTO.CreatedAt,
+                RefreshToken = userDTO.RefreshToken,
+                RefreshTokenExpiry = userDTO.RefreshTokenExpiry
+
             };
 
             _context.Users.Add(user);
@@ -143,7 +139,8 @@ public class UserRepository : IUserRepository
     {
         try
         {
-            UserEntity? user = _context.Users.FirstOrDefault(u => u.Username == username);
+            string normalizedUsername = username.ToLower();
+            UserEntity? user = _context.Users.FirstOrDefault(u => u.Username.ToLower() == normalizedUsername);
             if (user == null)
             {
                 return null;
@@ -164,6 +161,7 @@ public class UserRepository : IUserRepository
         }
     }
 
+
     public UserDTO? GetUserByRefreshToken(string refreshToken)
     {
         try
@@ -179,7 +177,9 @@ public class UserRepository : IUserRepository
                 Username = user.Username,
                 Email = user.Email,
                 ProfilePicture = user.ProfilePicture,
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
+                RefreshTokenExpiry = user.RefreshTokenExpiry,
+
             };
         }
         catch (Exception e)
