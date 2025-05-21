@@ -138,5 +138,18 @@ public class UserServiceTests
         _userRepoMock.Verify(r => r.DeleteUser(userId), Times.Once);
     }
 
+    [Fact]
+    public void DeleteUser_ReturnsFalse_WhenUserNotFound()
+    {
+        // Arrange
+        int userId = 3;
+        _userRepoMock.Setup(r => r.DeleteUser(userId)).Returns(false);
+        // Act
+        var result = _userService.DeleteUser(userId);
+        // Assert
+        Assert.False(result);
+        _userRepoMock.Verify(r => r.DeleteUser(userId), Times.Once);
+    }
+
 
 }
