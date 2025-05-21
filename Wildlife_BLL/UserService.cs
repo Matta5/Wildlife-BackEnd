@@ -12,9 +12,9 @@ namespace Wildlife_BLL
     public class UserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
 
-        public UserService(IUserRepository userRepository, AuthService authService)
+        public UserService(IUserRepository userRepository, IAuthService authService)
         {
             _userRepository = userRepository;
             _authService = authService;
@@ -109,7 +109,7 @@ namespace Wildlife_BLL
                 RefreshTokenExpiry = expiry
             };
 
-            _userRepository.UpdateUser(user.Id, createEditUserDTO); // Assuming this method commits the changes to the database
+            _userRepository.UpdateUser(user.Id, createEditUserDTO);
         }
 
     }

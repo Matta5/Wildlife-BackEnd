@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wildlife_DAL", "Wildlife_DA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wildlife_BLL", "Wildlife_BLL\Wildlife_BLL.csproj", "{8A3B54AC-A638-4BEE-99AC-9C81D9E749CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wildlife_Tests", "Wildlife_Tests\Wildlife_Tests.csproj", "{D0DF7CFD-3393-4853-A5BB-669DFCBA1BF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{8A3B54AC-A638-4BEE-99AC-9C81D9E749CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A3B54AC-A638-4BEE-99AC-9C81D9E749CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A3B54AC-A638-4BEE-99AC-9C81D9E749CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0DF7CFD-3393-4853-A5BB-669DFCBA1BF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0DF7CFD-3393-4853-A5BB-669DFCBA1BF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0DF7CFD-3393-4853-A5BB-669DFCBA1BF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0DF7CFD-3393-4853-A5BB-669DFCBA1BF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

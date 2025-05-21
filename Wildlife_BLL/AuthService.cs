@@ -5,10 +5,11 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Wildlife_BLL.DTO;
 using Microsoft.Extensions.Configuration;
+using Wildlife_BLL.Interfaces;
 
 namespace Wildlife_BLL
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly IConfiguration _config;
         public AuthService(IConfiguration config)
