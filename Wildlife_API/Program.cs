@@ -52,10 +52,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero // Optioneel: voorkomt extra vertraging bij expiry
+            ClockSkew = TimeSpan.Zero
         };
 
-        // 🧠 Hier halen we het token uit de cookie in plaats van de Authorization-header
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -75,13 +74,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // Dependency Injection
+
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
 builder.Services.AddScoped<ObservationService>();
 
-builder.Services.AddScoped<AuthService>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

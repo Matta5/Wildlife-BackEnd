@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Wildlife_BLL;
 using Wildlife_BLL.DTO;
+using Wildlife_BLL.Interfaces;
 
 namespace Wildlife_BackEnd.Controllers;
 
@@ -14,9 +15,9 @@ namespace Wildlife_BackEnd.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly UserService _userService;
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(UserService userService, AuthService authService)
+    public AuthController(UserService userService, IAuthService authService)
     {
         _userService = userService;
         _authService = authService;
