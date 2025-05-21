@@ -73,6 +73,21 @@ public class UserServiceTests
     }
 
     [Fact]
+    public void CreateUser_CreatesUser_WhenUsernameIsUnique()
+    {
+        // Arrange
+        var newUser = new CreateEditUserDTO { Username = "uniqueUser", Password = "pass" };
+        _userRepoMock.Setup(r => r.GetUserByUsername("uniqueuser")).Returns((UserDTO)null);
+        _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateEditUserDTO>())).Returns(true);
+        // Act
+        var result = _userService.CreateUser(newUser);
+        // Assert
+
+        Assert.True(result != null);
+        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateEditUserDTO>(u => u.Username == "uniqueUser")), Times.Once);
+    }
+
+    [Fact]
     public void VerifyPassword_ReturnsTrue_ForValidPassword()
     {
         // Arrange
