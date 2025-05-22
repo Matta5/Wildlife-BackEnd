@@ -22,13 +22,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore .NET dependencies
-        run: dotnet restore ./Wildlife\ -\ BackEnd/Wildlife_API.sln
+        run: dotnet restore "Wildlife - BackEnd/Wildlife - BackEnd.sln"
 
       - name: Build .NET project
-        run: dotnet build ./Wildlife\ -\ BackEnd/Wildlife_API.sln --no-restore --configuration Release
+        run: dotnet build "Wildlife - BackEnd/Wildlife - BackEnd.sln" --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test ./Wildlife\ -\ BackEnd/Wildlife_API.sln --no-build --configuration Release --verbosity normal
+        run: dotnet test "Wildlife - BackEnd/Wildlife - BackEnd.sln" --no-build --configuration Release --verbosity normal
 
       - name: Log in to DockerHub
         uses: docker/login-action@v3
@@ -38,10 +38,10 @@ jobs:
 
       - name: Build and Push Backend Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest ./Wildlife\ -\ BackEnd -f ./Wildlife\ -\ BackEnd/Wildlife_API/Dockerfile
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest "Wildlife - BackEnd" -f "Wildlife - BackEnd/Wildlife_API/Dockerfile"
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest
 
       - name: Build and Push Frontend Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-frontend:latest ./Wildlife\ -\ FrontEnd
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-frontend:latest "Wildlife - FrontEnd"
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-frontend:latest
