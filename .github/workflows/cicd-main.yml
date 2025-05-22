@@ -36,10 +36,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Backend Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest "Wildlife - BackEnd" -f "Wildlife - BackEnd/Wildlife_API/Dockerfile"
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest
+      - - name: Build and Push Backend Docker image
+          run: |
+            docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest "./Wildlife - BackEnd" -f "./Wildlife - BackEnd/Wildlife_API/Dockerfile"
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest
+
 
       - name: Build and Push Frontend Docker image
         run: |
