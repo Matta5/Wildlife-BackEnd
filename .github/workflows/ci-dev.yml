@@ -1,12 +1,12 @@
-name: Run .NET Tests
+name: ci for development
 
 on:
   push:
     branches:
-      - main
+      - development
   pull_request:
     branches:
-      - main
+      - development
 
 jobs:
   build-and-test:
