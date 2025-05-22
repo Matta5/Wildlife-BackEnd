@@ -38,6 +38,10 @@ jobs:
 
       - name: Build and Push Backend Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest -f "./Wildlife_API/Dockerfile"
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest "Wildlife - BackEnd" -f "Wildlife - BackEnd/Wildlife_API/Dockerfile"
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-backend:latest
 
+      - name: Build and Push Frontend Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-frontend:latest "Wildlife - FrontEnd"
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/wildlife-frontend:latest
