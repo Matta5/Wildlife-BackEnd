@@ -21,14 +21,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore .NET dependencies
-        run: dotnet restore "Wildlife - BackEnd/Wildlife - BackEnd.sln"
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Build .NET project
-        run: dotnet build "Wildlife - BackEnd/Wildlife - BackEnd.sln" --no-restore --configuration Release
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test "Wildlife - BackEnd/Wildlife - BackEnd.sln" --no-build --configuration Release --verbosity normal
+        run: dotnet test --no-build --configuration Release --verbosity normal
 
       - name: Log in to DockerHub
         uses: docker/login-action@v3
