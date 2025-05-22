@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wildlife_DAL.Data;
@@ -11,9 +12,11 @@ using Wildlife_DAL.Data;
 namespace Wildlife_DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250516232053_newinit")]
+    partial class newinit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,10 +84,9 @@ namespace Wildlife_DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("RefreshToken")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("RefreshTokenExpiry")
+                    b.Property<DateTime?>("RefreshTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Username")

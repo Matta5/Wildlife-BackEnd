@@ -5,10 +5,11 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Wildlife_BLL.DTO;
 using Microsoft.Extensions.Configuration;
+using Wildlife_BLL.Interfaces;
 
 namespace Wildlife_BLL
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly IConfiguration _config;
         public AuthService(IConfiguration config)
@@ -22,8 +23,8 @@ namespace Wildlife_BLL
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // ✅ This ensures correct claim type
-                new Claim(JwtRegisteredClaimNames.Sub, user.Username)
+                new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, user.Username)
             };
 
             var token = new JwtSecurityToken(

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wildlife_DAL.Data;
@@ -11,9 +12,11 @@ using Wildlife_DAL.Data;
 namespace Wildlife_DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250401131441_UpdatedRefreshTokenToNullable")]
+    partial class UpdatedRefreshTokenToNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,8 +56,6 @@ namespace Wildlife_DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.ToTable("Observations");
                 });
 
@@ -81,10 +82,9 @@ namespace Wildlife_DAL.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("RefreshToken")
-                        .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("RefreshTokenExpiry")
+                    b.Property<DateTime?>("RefreshTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Username")
@@ -94,22 +94,6 @@ namespace Wildlife_DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Wildlife_DAL.Entities.ObservationEntity", b =>
-                {
-                    b.HasOne("Wildlife_DAL.Entities.UserEntity", "User")
-                        .WithMany("Observations")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Wildlife_DAL.Entities.UserEntity", b =>
-                {
-                    b.Navigation("Observations");
                 });
 #pragma warning restore 612, 618
         }

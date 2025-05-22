@@ -13,13 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 DotEnv.Load();
 
-Console.WriteLine($"Connection String: {DotEnv.Read()}");
-
-
 var env = DotEnv.Read();
 
-var connectionString = env["DEFAULT_CONNECTION"]
-    ?? throw new InvalidOperationException("Connection string couldnt be found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -30,9 +27,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy(MyAllowSpecificOrigins,
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins( "https://localhost:5173",
+                                "http://localhost:5173",
+                                "http://localhost:3000")
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+
         });
 });
 
@@ -50,20 +51,39 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Cookies["token"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
+    
 
 builder.Services.AddAuthorization();
 
 // Dependency Injection
+
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
 builder.Services.AddScoped<ObservationService>();
 
-builder.Services.AddScoped<AuthService>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -79,6 +99,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(MyAllowSpecificOrigins);
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

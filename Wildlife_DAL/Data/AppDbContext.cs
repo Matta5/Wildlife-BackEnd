@@ -14,7 +14,22 @@ namespace Wildlife_DAL.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<UserEntity>(entity =>
+            {
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.Username).IsRequired();
+            });
+
+            modelBuilder.Entity<ObservationEntity>(entity =>
+            {
+                entity.HasKey(o => o.Id);
+                entity.HasOne(o => o.User)
+                      .WithMany(u => u.Observations)
+                      .HasForeignKey(o => o.UserId);
+            });
         }
+
 
     }
 }

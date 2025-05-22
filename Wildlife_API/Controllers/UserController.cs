@@ -29,11 +29,40 @@ namespace Wildlife_API.Controllers
             }
             return Ok(user);
         }
+
         [HttpPost]
         public IActionResult CreateUser(CreateEditUserDTO userDTO)
         {
-            return Ok(_userService.CreateUser(userDTO));
+            if (userDTO == null)
+            {
+                return BadRequest("User data is null");
+            }
+
+            var existingUser = _userService.GetUserByUsername(userDTO.Username);
+            if (existingUser != null)
+            {
+                return Conflict("Username already exists");
+            }
+
+            var result = _userService.CreateUser(userDTO);
+
+            Response.Cookies.Append("token", result.AccessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            return Ok(new{messsage = "User created successfully"});
         }
+
+
         [HttpDelete("{id}")]
         public IActionResult DeleteUser(int id)
         {
