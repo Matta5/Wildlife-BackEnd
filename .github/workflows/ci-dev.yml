@@ -28,5 +28,22 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests
-        run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Run tests with coverage
+        run: |
+          dotnet test ./Wildlife_Tests/Wildlife_Tests.csproj \
+          --no-build --configuration Release \
+          /p:CollectCoverage=true \
+          /p:CoverletOutputFormat=opencover \
+          /p:CoverletOutput=./TestResults/coverage.opencover.xml
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=Matta5_Wildlife-BackEnd
+            -Dsonar.organization=mathijs-van-den-heilignberg
+            -Dsonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+

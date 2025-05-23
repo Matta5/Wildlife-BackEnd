@@ -124,6 +124,24 @@ public class UserServiceTests
     }
 
     [Fact]
+    public void UpdateUser_ReturnsFalse_WhenUpdateFails()
+    {
+        // Arrange
+        var userId = 2;
+        var updateDto = new CreateEditUserDTO { Username = "updated", Password = "newpass" };
+        _userRepoMock
+            .Setup(r => r.UpdateUser(userId, It.IsAny<CreateEditUserDTO>()))
+            .Returns(false);
+        // Act
+        var result = _userService.UpdateUser(userId, updateDto);
+        // Assert
+        Assert.False(result);
+        _userRepoMock.Verify(r => r.UpdateUser(userId, It.Is<CreateEditUserDTO>(
+            dto => !string.IsNullOrWhiteSpace(dto.Password) && dto.Username == "updated"
+        )), Times.Once);
+    }
+
+    [Fact]
     public void DeleteUser_ReturnsTrue_WhenUserDeleted()
     {
         // Arrange
