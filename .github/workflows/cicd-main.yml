@@ -29,7 +29,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          dotnet test ./Wildlife_Tests.csproj \
+          dotnet test ./Wildlife_Tests/Wildlife_Tests.csproj \
           --no-build --configuration Release \
           /p:CollectCoverage=true \
           /p:CoverletOutputFormat=opencover \
