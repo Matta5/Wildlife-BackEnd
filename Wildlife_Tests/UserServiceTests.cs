@@ -180,5 +180,16 @@ public class UserServiceTests
         Assert.True(result);
     }
 
+    [Fact]
+    public void testnegatice()
+    {
+        //arrange
+        bool result = false;
+        //act
+
+        //assert
+        Assert.False(result);
+    }
+
 
 }
