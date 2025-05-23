@@ -21,7 +21,6 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -34,14 +33,13 @@ jobs:
           --no-build --configuration Release \
           /p:CollectCoverage=true \
           /p:CoverletOutputFormat=opencover \
-          /p:CoverletOutput=./Wildlife_Tests/TestResults/coverage.opencover.xml
-
+          /p:CoverletOutput=../TestResults/coverage.opencover.xml
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: Wildlife_Tests/TestResults/coverage.opencover.xml
+          path: TestResults/coverage.opencover.xml
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
@@ -52,5 +50,3 @@ jobs:
             -Dsonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-
