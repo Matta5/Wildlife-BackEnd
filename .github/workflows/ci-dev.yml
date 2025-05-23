@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -29,38 +31,32 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          dotnet test ./Wildlife_Tests/Wildlife_Tests.csproj \
-          --no-build \
-          --configuration Release \
-          --collect:"XPlat Code Coverage" \
-          --results-directory ./TestResults \
-          --logger trx
+          dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory TestResults/
 
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: Generate coverage reports
+      - name: Generate OpenCover report
         run: |
           reportgenerator \
-          -reports:"./TestResults/*/coverage.cobertura.xml" \
-          -targetdir:"./CoverageReport" \
-          -reporttypes:"OpenCover;Html" \
-          -filefilters:"-**/obj/**;-**/bin/**;-**/TestResults/**"
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage" \
+            -reporttypes:"OpenCover"
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: |
-            ./CoverageReport/OpenCover.xml
-            ./CoverageReport/
+      - name: List generated files (debug)
+        run: |
+          echo "Generated coverage files:"
+          find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=Matta5_Wildlife-BackEnd
-            -Dsonar.organization=mathijs-van-den-heilignberg
-            -Dsonar.cs.opencover.reportsPaths=./CoverageReport/OpenCover.xml
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            -Dsonar.cs.opencover.reportsPaths=coverage/OpenCover.xml
