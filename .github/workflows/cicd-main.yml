@@ -35,26 +35,12 @@ jobs:
             --configuration Release \
             --no-build \
             --collect:"XPlat Code Coverage" \
-            --results-directory TestResults/ \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+            --results-directory TestResults/
 
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
-      - name: Generate coverage report
+      - name: (debug) List coverage files
         run: |
-          reportgenerator \
-            -reports:"TestResults/**/coverage.opencover.xml" \
-            -targetdir:"coverage" \
-            -reporttypes:"Cobertura" \
-            -reportfile:"coverage/Cobertura.xml"
+          find TestResults -name coverage.opencover.xml
 
-      - name: List generated files (debug)
-        run: |
-          echo "Generated coverage files:"
-          find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
-          ls -la coverage/
-          
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3
         env:
@@ -64,7 +50,7 @@ jobs:
           args: >
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.cs.opencover.reportsPaths=coverage/Cobertura.xml
+            -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
 
       - name: Log in to DockerHub
         uses: docker/login-action@v3
