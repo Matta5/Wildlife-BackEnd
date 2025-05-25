@@ -37,6 +37,7 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --results-directory TestResults/ \
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
@@ -46,12 +47,14 @@ jobs:
             -reports:"TestResults/**/coverage.opencover.xml" \
             -targetdir:"coverage" \
             -reporttypes:"Cobertura" \
-            -reportfile:"coverage/coverage.cobertura.xml"
+            -reportfile:"coverage/Cobertura.xml"
+
       - name: List generated files (debug)
         run: |
           echo "Generated coverage files:"
           find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
           ls -la coverage/
+          
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3
         env:
