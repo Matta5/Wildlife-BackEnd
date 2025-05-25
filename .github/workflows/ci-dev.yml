@@ -53,8 +53,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
-            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${ Matta5_Wildlife-BackEnd}
+            -Dsonar.organization=${ mathijs-van-den-heilignberg }
             -Dsonar.sources=.
             -Dsonar.exclusions=**/bin/**,**/obj/**,**/*.Tests/**,TestResults/**
             -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
