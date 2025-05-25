@@ -36,7 +36,11 @@ jobs:
         run: dotnet build --no-restore
 
       - name: Run tests with coverage
-        run: dotnet test --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=coverage/
+        run: |
+          dotnet test --no-build --verbosity normal \
+          /p:CollectCoverage=true \
+          /p:CoverletOutputFormat=opencover \
+          /p:CoverletOutput=../../coverage/
 
       - name: Inspect workspace (debugging)
         run: |
