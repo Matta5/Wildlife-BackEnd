@@ -1,4 +1,4 @@
-name: ci for development
+name: CI for Development
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -35,22 +35,16 @@ jobs:
             --configuration Release \
             --no-build \
             --collect:"XPlat Code Coverage" \
-            --results-directory TestResults/
+            --results-directory TestResults/ \
+            --logger trx \
+            --logger "html;logfilename=testResults.html" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
-      - name: Generate OpenCover report
-        run: |
-          reportgenerator \
-            -reports:"TestResults/**/coverage.cobertura.xml" \
-            -targetdir:"coverage" \
-            -reporttypes:"OpenCover"
-
-      - name: List generated files (debug)
+      - name: List coverage files (debug)
         run: |
           echo "Generated coverage files:"
-          find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
+          find TestResults -name "*.xml" -type f
+          ls -la TestResults/
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
@@ -59,4 +53,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.cs.opencover.reportsPaths=coverage/OpenCover.xml
+            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/bin/**,**/obj/**,**/*.Tests/**,TestResults/**
+            -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
