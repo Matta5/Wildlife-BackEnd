@@ -16,47 +16,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Install SonarScanner
-        env:
-          PATH: $HOME/.dotnet/tools:$PATH
-        run: dotnet tool install --global dotnet-sonarscanner
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Begin SonarCloud analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          PATH: $HOME/.dotnet/tools:$PATH
-        run: |
-          dotnet sonarscanner begin \
-            /k:"<PROJECT_KEY>" \
-            /o:"<ORG_KEY>" \
-            /d:sonar.token="$SONAR_TOKEN" \
-            /d:sonar.cs.opencover.reportsPaths="TestResults/coverage.opencover.xml"
-
-      - name: Restore and Build
-        run: |
-          dotnet restore
-          dotnet build --no-restore --configuration Release
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
       - name: Run tests with coverage
-        env:
-          PATH: $HOME/.dotnet/tools:$PATH
         run: |
           dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
-            --no-build \
             --configuration Release \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=TestResults/ \
-            /p:CoverletOutputFormat=opencover
+            --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory TestResults/
 
-      - name: End SonarCloud analysis
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate OpenCover report
+        run: |
+          reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage" \
+            -reporttypes:"OpenCover"
+
+      - name: List generated files (debug)
+        run: |
+          echo "Generated coverage files:"
+          find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          PATH: $HOME/.dotnet/tools:$PATH
-        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+        with:
+          args: >
+            -Dsonar.cs.opencover.reportsPaths=coverage/OpenCover.xml
