@@ -38,6 +38,13 @@ jobs:
       - name: Run tests with coverage
         run: dotnet test --no-build --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=coverage/
 
+      - name: Inspect workspace (debugging)
+        run: |
+          echo "📁 Huidige directory:"
+          pwd
+          echo "📂 Bestanden in coverage map:"
+          ls -al coverage || echo "Geen coverage map gevonden."
+
       - name: End SonarCloud scan
         run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
