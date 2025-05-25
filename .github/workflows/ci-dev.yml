@@ -12,10 +12,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      PATH: ~/.dotnet/tools:$PATH
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,9 +24,14 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Install SonarScanner
+        env:
+          PATH: $HOME/.dotnet/tools:$PATH
         run: dotnet tool install --global dotnet-sonarscanner
 
       - name: Begin SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PATH: $HOME/.dotnet/tools:$PATH
         run: |
           dotnet sonarscanner begin \
             /k:"<PROJECT_KEY>" \
@@ -44,6 +45,8 @@ jobs:
           dotnet build --no-restore --configuration Release
 
       - name: Run tests with coverage
+        env:
+          PATH: $HOME/.dotnet/tools:$PATH
         run: |
           dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
             --no-build \
@@ -53,4 +56,7 @@ jobs:
             /p:CoverletOutputFormat=opencover
 
       - name: End SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PATH: $HOME/.dotnet/tools:$PATH
         run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
