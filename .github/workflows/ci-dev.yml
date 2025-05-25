@@ -25,13 +25,14 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
-
+      
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
       - name: Run tests with coverage
         run: |
           dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
+
             --configuration Release \
             --no-build \
             --collect:"XPlat Code Coverage" \
