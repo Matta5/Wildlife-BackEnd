@@ -1,4 +1,4 @@
-name: CI for Development
+name: ci for development
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better SonarCloud analysis
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -35,16 +35,22 @@ jobs:
             --configuration Release \
             --no-build \
             --collect:"XPlat Code Coverage" \
-            --results-directory TestResults/ \
-            --logger trx \
-            --logger "html;logfilename=testResults.html" \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+            --results-directory TestResults/
 
-      - name: List coverage files (debug)
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate OpenCover report
+        run: |
+          reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage" \
+            -reporttypes:"OpenCover"
+
+      - name: List generated files (debug)
         run: |
           echo "Generated coverage files:"
-          find TestResults -name "*.xml" -type f
-          ls -la TestResults/
+          find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
@@ -53,8 +59,4 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=${ Matta5_Wildlife-BackEnd}
-            -Dsonar.organization=${ mathijs-van-den-heilignberg }
-            -Dsonar.sources=.
-            -Dsonar.exclusions=**/bin/**,**/obj/**,**/*.Tests/**,TestResults/**
-            -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
+            -Dsonar.cs.opencover.reportsPaths=coverage/OpenCover.xml
