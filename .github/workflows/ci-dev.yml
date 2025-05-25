@@ -1,4 +1,4 @@
-name: ci for development
+name: CI for Development
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -35,28 +35,27 @@ jobs:
             --configuration Release \
             --no-build \
             --collect:"XPlat Code Coverage" \
-            --results-directory TestResults/
+            --results-directory TestResults/ \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: Generate OpenCover report
+      - name: Generate coverage report
         run: |
           reportgenerator \
-            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -reports:"TestResults/**/coverage.opencover.xml" \
             -targetdir:"coverage" \
-            -reporttypes:"OpenCover"
+            -reporttypes:"Cobertura"
 
       - name: List generated files (debug)
         run: |
           echo "Generated coverage files:"
           find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
+          ls -la coverage/
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.cs.opencover.reportsPaths=TestResults/*/coverage.cobertura.xml
