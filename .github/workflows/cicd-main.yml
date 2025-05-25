@@ -12,10 +12,6 @@ jobs:
   build-test-and-push:
     runs-on: ubuntu-latest
 
-    env:
-      PATH: ~/.dotnet/tools:$PATH
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,36 +31,34 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          dotnet test ./Wildlife_Tests/Wildlife_Tests.csproj \
-            --no-build \
+          dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
             --configuration Release \
+            --no-build \
             --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults \
-            --logger trx
+            --results-directory TestResults/
 
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: Generate coverage reports
+      - name: Generate OpenCover report
         run: |
           reportgenerator \
-            -reports:"./TestResults/*/coverage.cobertura.xml" \
-            -targetdir:"./CoverageReport" \
-            -reporttypes:"OpenCover;Html" \
-            -filefilters:"-**/obj/**;-**/bin/**;-**/TestResults/**"
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage" \
+            -reporttypes:"OpenCover"
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: ./CoverageReport
+      - name: List generated files (debug)
+        run: |
+          echo "Generated coverage files:"
+          find . -name "*.xml" -path "*/coverage/*" -o -path "*/TestResults/*"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=Matta5_Wildlife-BackEnd
-            -Dsonar.organization=mathijs-van-den-heilignberg
             -Dsonar.cs.opencover.reportsPaths=TestResults/*/coverage.cobertura.xml
 
       - name: Log in to DockerHub
