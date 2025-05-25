@@ -35,12 +35,21 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
 
+      - name: Maak coverage directory aan
+        run: mkdir -p coverage
+
       - name: Run tests with coverage
-        run: |
-          dotnet test --no-build --verbosity normal \
+        run: dotnet test --no-build --verbosity normal \
           /p:CollectCoverage=true \
           /p:CoverletOutputFormat=opencover \
-          /p:CoverletOutput=../../coverage/
+          /p:CoverletOutput=${{ github.workspace }}/coverage/ \
+          /p:Debug=true
+
+      - name: Inspecteer coverage directory
+        run: |
+          echo "📂 Bestanden in coverage map:"
+          ls -al coverage || echo "Geen coverage map gevonden."
+
 
 
       - name: Inspect workspace (debugging)
