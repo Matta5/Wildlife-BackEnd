@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+          fetch-depth: 0 
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -29,13 +29,14 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage (via Coverlet)
         run: |
           dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
             --configuration Release \
             --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory TestResults/
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=TestResults/coverage/ \
+            /p:CoverletOutputFormat=opencover
 
       - name: (debug) List coverage files
         run: |
@@ -50,4 +51,4 @@ jobs:
           args: >
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
+            -Dsonar.cs.opencover.reportsPaths=TestResults/coverage/coverage.opencover.xml
