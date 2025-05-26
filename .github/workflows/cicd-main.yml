@@ -40,7 +40,7 @@ jobs:
 
       - name: (debug) List coverage files
         run: |
-          find TestResults -name coverage.opencover.xml
+          run: ls -l TestResults/coverage/
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3
