@@ -35,12 +35,13 @@ jobs:
             --configuration Release \
             --no-build \
             /p:CollectCoverage=true \
-            /p:CoverletOutput=TestResults/coverage/ \
+            /p:CoverletOutput=./TestResults/coverage/coverage \
             /p:CoverletOutputFormat=opencover
 
+
       - name: (debug) List coverage files
-        run: |
-          find TestResults -name coverage.opencover.xml
+        run: ls -l TestResults/coverage/
+
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3
@@ -52,3 +53,4 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.cs.opencover.reportsPaths=TestResults/coverage/coverage.opencover.xml
+
