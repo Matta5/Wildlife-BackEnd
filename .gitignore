@@ -364,3 +364,4 @@ FodyWeavers.xsd
 Wildlife - BackEnd/.env
 Wildlife_API/appsettings.Development.json
 Wildlife_API/appsettings.Production.json
+/.sonarqube
