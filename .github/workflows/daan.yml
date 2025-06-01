@@ -71,6 +71,11 @@ jobs:
           --results-directory TestResults 
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
+      - name: Show test results directory contents
+        run: |
+          Get-ChildItem -Recurse TestResults
+          Get-Content TestResults\*\coverage.opencover.xml -First 50
+        shell: powershell
 
       - name: End SonarCloud analysis
         env:
