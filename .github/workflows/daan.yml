@@ -65,17 +65,12 @@ jobs:
         run: dotnet build --no-incremental
 
       - name: Test and collect coverage
-        run: dotnet test --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+        run: >
+          dotnet test --no-build 
+          --collect:"XPlat Code Coverage" 
+          --results-directory TestResults 
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
-      - name: Convert coverage to OpenCover
-        run: |
-          reportgenerator `
-            -reports:"TestResults/**/coverage.cobertura.xml" `
-            -targetdir:"coveragereport" `
-            -reporttypes:Opencover `
-            -filefilters:"-**/Migrations/*"
-
-          Copy-Item "coveragereport/coverage.opencover.xml" -Destination "coverage.opencover.xml"
 
       - name: End SonarCloud analysis
         env:
