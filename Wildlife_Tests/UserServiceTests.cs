@@ -169,4 +169,12 @@ public class UserServiceTests
         _userRepoMock.Verify(r => r.DeleteUser(userId), Times.Once);
     }
 
+    [Fact]
+    public void test()
+    {
+        bool result = true;
+
+        Assert.True(result);
+    }
+
 }
