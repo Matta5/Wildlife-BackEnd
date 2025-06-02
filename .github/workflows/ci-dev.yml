@@ -9,43 +9,78 @@ on:
       - development
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+  build:
+    name: Build, test and analyze
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu'
+
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
         with:
-          dotnet-version: '8.0.x'
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Cache SonarCloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: .\.sonar\scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
 
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Run tests with coverage (via Coverlet)
+      - name: Install SonarCloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
         run: |
-          dotnet test Wildlife_Tests/Wildlife_Tests.csproj \
-            --configuration Release \
-            --no-build \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=./TestResults/coverage/coverage \
-            /p:CoverletOutputFormat=opencover
+          New-Item -Path .\.sonar\scanner -ItemType Directory
+          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v3
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Begin SonarCloud analysis
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.cs.opencover.reportsPaths=TestResults/coverage/coverage.opencover.xml
+        shell: powershell
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner begin `
+            /k:"${{ secrets.SONAR_PROJECT_KEY }}" `
+            /o:"${{ secrets.SONAR_ORGANIZATION }}" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml"
+
+      - name: Build the solution
+        run: dotnet build --no-incremental
+
+      - name: Test and collect coverage
+        run: >
+          dotnet test --no-build 
+          --collect:"XPlat Code Coverage" 
+          --results-directory TestResults 
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Show test results directory contents
+        run: |
+          Get-ChildItem -Recurse TestResults
+          Get-Content TestResults\*\coverage.opencover.xml -First 50
+        shell: powershell
+
+      - name: End SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: powershell
+        run: .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
