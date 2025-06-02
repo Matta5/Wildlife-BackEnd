@@ -145,6 +145,18 @@ public class UserServiceTests
         )), Times.Once);
     }
 
+    [Fact]
+    public void PatchUser_ReturnsException_UsernameTaken()
+    {
+        // Arrange
+        var userId = 1;
+        var updateDto = new PatchUserDTO { Username = "takenUsername", Password = "newpass" };
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
+        _userRepoMock.Setup(r => r.GetUserByUsername("takenusername")).Returns(new UserDTO { Id = 2 });
+        // Act & Assert
+        Assert.Throws<Exception>(() => _userService.PatchUser(userId, updateDto));
+    }
+
 
     [Fact]
     public void DeleteUser_ReturnsTrue_WhenUserDeleted()
