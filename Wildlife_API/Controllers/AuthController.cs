@@ -81,6 +81,7 @@ public class AuthController : ControllerBase
         if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow)
             return Unauthorized("Invalid refresh token");
 
+
         var newAccessToken = _authService.GenerateAccessToken(user);
         var newRefreshToken = _authService.GenerateRefreshToken();
         var newRefreshTokenExpiry = DateTime.UtcNow.AddDays(7);

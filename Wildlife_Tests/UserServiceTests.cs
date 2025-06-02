@@ -1,5 +1,4 @@
-﻿using Xunit;
-using Moq;
+﻿using Moq;
 using Wildlife_BLL;
 using Wildlife_BLL.DTO;
 using Wildlife_BLL.Interfaces;
@@ -65,7 +64,7 @@ public class UserServiceTests
     public void CreateUser_ThrowsException_WhenUsernameExists()
     {
         // Arrange
-        var newUser = new CreateEditUserDTO { Username = "TestUser", Password = "pass" };
+        var newUser = new CreateUserDTO { Username = "TestUser", Password = "pass" };
         _userRepoMock.Setup(r => r.GetUserByUsername("testuser")).Returns(new UserDTO());
 
         // Act & Assert
@@ -76,15 +75,15 @@ public class UserServiceTests
     public void CreateUser_CreatesUser_WhenUsernameIsUnique()
     {
         // Arrange
-        var newUser = new CreateEditUserDTO { Username = "uniqueUser", Password = "pass" };
+        var newUser = new CreateUserDTO { Username = "uniqueUser", Password = "pass" };
         _userRepoMock.Setup(r => r.GetUserByUsername("uniqueuser")).Returns((UserDTO)null);
-        _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateEditUserDTO>())).Returns(true);
+        _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateUserDTO>())).Returns(true);
         // Act
         var result = _userService.CreateUser(newUser);
         // Assert
 
         Assert.True(result != null);
-        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateEditUserDTO>(u => u.Username == "uniqueUser")), Times.Once);
+        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateUserDTO>(u => u.Username == "uniqueUser")), Times.Once);
     }
 
     [Fact]
@@ -103,43 +102,49 @@ public class UserServiceTests
     }
 
     [Fact]
-    public void UpdateUser_ReturnsTrue_WhenUpdateSucceeds()
+    public void PatchUser_ReturnsTrue_WhenUpdateSucceeds()
     {
         // Arrange
         var userId = 1;
-        var updateDto = new CreateEditUserDTO { Username = "updated", Password = "newpass" };
+        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
 
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
         _userRepoMock
-            .Setup(r => r.UpdateUser(userId, It.IsAny<CreateEditUserDTO>()))
+            .Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>()))
             .Returns(true);
 
         // Act
-        var result = _userService.UpdateUser(userId, updateDto);
+        var result = _userService.PatchUser(userId, updateDto);
 
         // Assert
         Assert.True(result);
-        _userRepoMock.Verify(r => r.UpdateUser(userId, It.Is<CreateEditUserDTO>(
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(
             dto => !string.IsNullOrWhiteSpace(dto.Password) && dto.Username == "updated"
         )), Times.Once);
     }
 
     [Fact]
-    public void UpdateUser_ReturnsFalse_WhenUpdateFails()
+    public void PatchUser_ReturnsFalse_WhenUpdateFails()
     {
         // Arrange
         var userId = 2;
-        var updateDto = new CreateEditUserDTO { Username = "updated", Password = "newpass" };
+        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
+
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
         _userRepoMock
-            .Setup(r => r.UpdateUser(userId, It.IsAny<CreateEditUserDTO>()))
+            .Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>()))
             .Returns(false);
+
         // Act
-        var result = _userService.UpdateUser(userId, updateDto);
+        var result = _userService.PatchUser(userId, updateDto);
+
         // Assert
         Assert.False(result);
-        _userRepoMock.Verify(r => r.UpdateUser(userId, It.Is<CreateEditUserDTO>(
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(
             dto => !string.IsNullOrWhiteSpace(dto.Password) && dto.Username == "updated"
         )), Times.Once);
     }
+
 
     [Fact]
     public void DeleteUser_ReturnsTrue_WhenUserDeleted()
@@ -170,11 +175,20 @@ public class UserServiceTests
     }
 
     [Fact]
-    public void test()
+    public void UpdateRefreshToken_ValidUser_UpdatesToken()
     {
-        bool result = true;
+        // Arrange
+        int userId = 1;
+        string token = "new-token";
+        DateTime expiry = DateTime.UtcNow.AddDays(7);
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
 
-        Assert.True(result);
+        // Act
+        _userService.UpdateRefreshToken(userId, token, expiry);
+
+        // Assert
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(dto =>
+            dto.RefreshToken == token && dto.RefreshTokenExpiry == expiry
+        )), Times.Once);
     }
-
 }

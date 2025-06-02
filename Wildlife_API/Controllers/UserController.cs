@@ -31,7 +31,7 @@ namespace Wildlife_API.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateUser(CreateEditUserDTO userDTO)
+        public IActionResult CreateUser(CreateUserDTO userDTO)
         {
             if (userDTO == null)
             {
@@ -68,11 +68,25 @@ namespace Wildlife_API.Controllers
         {
             return Ok(_userService.DeleteUser(id));
         }
-        [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, CreateEditUserDTO userDTO)
+
+        [HttpPatch("{id}")]
+        public IActionResult PatchUser(int id, [FromBody] PatchUserDTO dto)
         {
-            return Ok(_userService.UpdateUser(id, userDTO));
+            try
+            {
+                bool success = _userService.PatchUser(id, dto);
+                if (!success)
+                    return NotFound();
+
+                return Ok(new { messsage = "User patched successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
+
+
 
     }
 }

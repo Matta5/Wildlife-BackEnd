@@ -27,7 +27,7 @@ namespace Wildlife_BLL
         {
             return _userRepository.GetUserById(id);
         }
-        public AuthResultDTO CreateUser(CreateEditUserDTO userDTO)
+        public AuthResultDTO CreateUser(CreateUserDTO userDTO)
         {
             var existingUser = _userRepository.GetUserByUsername(userDTO.Username.ToLower());
             if (existingUser != null)
@@ -65,17 +65,35 @@ namespace Wildlife_BLL
         {
             return _userRepository.DeleteUser(id);
         }
-        public bool UpdateUser(int id, CreateEditUserDTO userDTO)
-        {
-            PasswordHasher<object> passwordHasher = new PasswordHasher<object>();
-            userDTO.Password = passwordHasher.HashPassword(null, userDTO.Password);
 
-            return _userRepository.UpdateUser(id, userDTO);
+        public bool PatchUser(int id, PatchUserDTO dto)
+        {
+            UserDTO existingUser = _userRepository.GetUserById(id);
+            if (existingUser == null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(dto.Username))
+            {
+                UserDTO? userWithSameUsername = _userRepository.GetUserByUsername(dto.Username.ToLower());
+                if (userWithSameUsername != null && userWithSameUsername.Id != id)
+                {
+                    throw new Exception("Username already taken.");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+            {
+                PasswordHasher<object> hasher = new();
+                dto.Password = hasher.HashPassword(null, dto.Password);
+            }
+
+            return _userRepository.PatchUser(id, dto);
         }
+
 
         public UserDTO? GetUserByUsername(string username)
         {
-            return _userRepository.GetUserByUsername(username.ToLower()); // Normalize to lowercase
+            return _userRepository.GetUserByUsername(username.ToLower());
         }
 
         public UserDTO? GetUserByRefreshToken(string refreshToken)
@@ -94,22 +112,13 @@ namespace Wildlife_BLL
 
         public void UpdateRefreshToken(int userId, string refreshToken, DateTime expiry)
         {
-            UserDTO user = _userRepository.GetUserById(userId);
-            if (user == null)
-                throw new ArgumentException("User not found");
-
-            CreateEditUserDTO createEditUserDTO = new CreateEditUserDTO
+            PatchUserDTO patchUserDTO = new PatchUserDTO
             {
-                Username = user.Username,
-                Email = user.Email,
-                Password = user.PasswordHash,
-                ProfilePicture = user.ProfilePicture,
-                CreatedAt = user.CreatedAt,
                 RefreshToken = refreshToken,
                 RefreshTokenExpiry = expiry
             };
 
-            _userRepository.UpdateUser(user.Id, createEditUserDTO);
+            _userRepository.PatchUser(userId, patchUserDTO);
         }
 
     }

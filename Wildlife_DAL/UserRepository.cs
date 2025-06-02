@@ -60,7 +60,7 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public bool CreateUser(CreateEditUserDTO userDTO)
+    public bool CreateUser(CreateUserDTO userDTO)
     {
         try
         {
@@ -107,33 +107,36 @@ public class UserRepository : IUserRepository
         }        
     }
 
-    public bool UpdateUser(int id, CreateEditUserDTO userDTO)
+    public bool PatchUser(int id, PatchUserDTO dto)
     {
-        try
-        {
-            UserEntity? user = _context.Users.Find(id);
+        var user = _context.Users.Find(id);
+        if (user == null) return false;
 
-            if (user == null)
-            {
-                throw new Exception($"User not found");
-            }
+        if (!string.IsNullOrWhiteSpace(dto.Username))
+            user.Username = dto.Username;
 
-            user.Username = userDTO.Username;
-            user.Email = userDTO.Email;
-            user.PasswordHash = userDTO.Password;
-            user.ProfilePicture = userDTO.ProfilePicture;
-            user.CreatedAt = userDTO.CreatedAt;
-            user.RefreshToken = userDTO.RefreshToken;
-            user.RefreshTokenExpiry = userDTO.RefreshTokenExpiry;
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+            user.Email = dto.Email;
 
-            _context.SaveChanges();
-            return true;
-        }
-        catch (Exception e)
-        {
-            throw new Exception("An error occurred while updating user", e);
-        }
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+            user.PasswordHash = dto.Password;
+
+        if (!string.IsNullOrWhiteSpace(dto.ProfilePicture))
+            user.ProfilePicture = dto.ProfilePicture;
+
+        if (dto.CreatedAt.HasValue)
+            user.CreatedAt = dto.CreatedAt.Value;
+
+        if (!string.IsNullOrWhiteSpace(dto.RefreshToken))
+            user.RefreshToken = dto.RefreshToken;
+
+        if (dto.RefreshTokenExpiry.HasValue)
+            user.RefreshTokenExpiry = dto.RefreshTokenExpiry.Value;
+
+        _context.SaveChanges();
+        return true;
     }
+
 
     public UserDTO? GetUserByUsername(string username)
     {
