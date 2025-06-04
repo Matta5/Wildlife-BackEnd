@@ -3,21 +3,18 @@ using Wildlife_BLL.Interfaces;
 using Wildlife_DAL.Data;
 using Wildlife_BLL;
 using Wildlife_DAL;
+using Wildlife_EIL;
 using dotenv.net;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 DotEnv.Load();
-
 var env = DotEnv.Read();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -27,13 +24,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy(MyAllowSpecificOrigins,
         policy =>
         {
-            policy.WithOrigins( "https://localhost:5173",
+            policy.WithOrigins("https://localhost:5173",
                                 "http://localhost:5173",
                                 "http://localhost:3000")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
-
         });
 });
 
@@ -54,7 +50,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
-
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -64,26 +59,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 {
                     context.Token = token;
                 }
-
                 return Task.CompletedTask;
             }
         };
     });
-    
 
 builder.Services.AddAuthorization();
 
 // Dependency Injection
-
-
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
-
 builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
 builder.Services.AddScoped<ObservationService>();
-
-
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddHttpClient<IIdentifyClient, IdentifyClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "WildlifeApp/1.0");
+});
+builder.Services.AddScoped<IdentifyService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -98,11 +93,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(MyAllowSpecificOrigins);
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
 
 public partial class Program { }

@@ -32,6 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Wildlife_BLL\Wildlife_BLL.csproj" />
     <ProjectReference Include="..\Wildlife_DAL\Wildlife_DAL.csproj" />
+    <ProjectReference Include="..\Wildlife_EIL\Wildlife_EIL.csproj" />
   </ItemGroup>
 
   <ItemGroup>
