@@ -29,12 +29,6 @@ namespace Wildlife_BLL
         }
         public AuthResultDTO CreateUser(CreateUserDTO userDTO)
         {
-            var existingUser = _userRepository.GetUserByUsername(userDTO.Username.ToLower());
-            if (existingUser != null)
-            {
-                throw new Exception("Username already exists");
-            }
-
             PasswordHasher<object> passwordHasher = new PasswordHasher<object>();
             string passwordHash = passwordHasher.HashPassword(null, userDTO.Password);
 
@@ -47,7 +41,7 @@ namespace Wildlife_BLL
 
             _userRepository.CreateUser(userDTO);
 
-            UserDTO? user = _userRepository.GetUserByUsername(userDTO.Username); // Retrieve with original casing
+            UserDTO? user = _userRepository.GetUserByUsername(userDTO.Username);
             string accessToken = _authService.GenerateAccessToken(user);
 
             return new AuthResultDTO
@@ -56,10 +50,6 @@ namespace Wildlife_BLL
                 RefreshToken = refreshToken
             };
         }
-
-
-
-
 
         public bool DeleteUser(int id)
         {
@@ -72,15 +62,6 @@ namespace Wildlife_BLL
             if (existingUser == null)
                 return false;
 
-            if (!string.IsNullOrWhiteSpace(dto.Username))
-            {
-                UserDTO? userWithSameUsername = _userRepository.GetUserByUsername(dto.Username.ToLower());
-                if (userWithSameUsername != null && userWithSameUsername.Id != id)
-                {
-                    throw new Exception("Username already taken.");
-                }
-            }
-
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
                 PasswordHasher<object> hasher = new();
@@ -89,7 +70,6 @@ namespace Wildlife_BLL
 
             return _userRepository.PatchUser(id, dto);
         }
-
 
         public UserDTO? GetUserByUsername(string username)
         {
@@ -121,5 +101,10 @@ namespace Wildlife_BLL
             _userRepository.PatchUser(userId, patchUserDTO);
         }
 
+        public UserDTO GetUserByEmail(string email)
+        {
+            return _userRepository.GetUserByUsername(email.ToLower());
+
+        }
     }
 }

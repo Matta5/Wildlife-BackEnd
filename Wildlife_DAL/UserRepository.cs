@@ -190,4 +190,30 @@ public class UserRepository : IUserRepository
             throw new Exception("An error occurred while getting the user by refresh token", e);
         }
     }
+
+    public UserDTO? GetUserByEmail(string email)
+    {
+        try
+        {
+            string normalizedEmail = email.ToLower();
+            UserEntity? user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == normalizedEmail);
+            if (user == null)
+            {
+                return null;
+            }
+            return new UserDTO
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                PasswordHash = user.PasswordHash,
+                ProfilePicture = user.ProfilePicture,
+                CreatedAt = user.CreatedAt
+            };
+        }
+        catch (Exception e)
+        {
+            throw new Exception("An error occurred while getting the user by email", e);
+        }
+    }
 }

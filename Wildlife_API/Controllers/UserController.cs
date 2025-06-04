@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Wildlife_BLL.DTO;
 using Wildlife_BLL;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Wildlife_API.Controllers
 {
@@ -31,17 +33,18 @@ namespace Wildlife_API.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateUser(CreateUserDTO userDTO)
+        public IActionResult CreateUser([FromBody] CreateUserDTO userDTO)
         {
-            if (userDTO == null)
-            {
-                return BadRequest("User data is null");
-            }
-
-            var existingUser = _userService.GetUserByUsername(userDTO.Username);
+            UserDTO? existingUser = _userService.GetUserByUsername(userDTO.Username);
             if (existingUser != null)
             {
                 return Conflict("Username already exists");
+            }
+
+            UserDTO? existingEmail = _userService.GetUserByEmail(userDTO.Email);
+            if (existingEmail != null)
+            {
+                return Conflict("Email already in use");
             }
 
             var result = _userService.CreateUser(userDTO);
@@ -59,21 +62,44 @@ namespace Wildlife_API.Controllers
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new{messsage = "User created successfully"});
+            return Ok(new{message = "User created successfully"});
         }
 
 
         [HttpDelete("{id}")]
+        [Authorize]
         public IActionResult DeleteUser(int id)
         {
+            int? userId = GetUserIdFromClaims();
+            if (userId != id)
+            {
+                return Unauthorized("You can only delete your own account");
+            }
+
             return Ok(_userService.DeleteUser(id));
         }
 
         [HttpPatch("{id}")]
-        public IActionResult PatchUser(int id, [FromBody] PatchUserDTO dto)
+        [Authorize]
+        public IActionResult PatchUser([FromBody] PatchUserDTO dto)
         {
             try
             {
+                int? userId = GetUserIdFromClaims();
+                if (userId == null)
+                {
+                    return Unauthorized("You can only update your own account");
+                } int id = userId.Value;
+
+                if (!string.IsNullOrWhiteSpace(dto.Username))
+                {
+                    UserDTO? existingUsername = _userService.GetUserByUsername(dto.Username);
+                    if (existingUsername != null && existingUsername.Id != userId)
+                    {
+                        return Conflict("Username already exists");
+                    }
+                }
+
                 bool success = _userService.PatchUser(id, dto);
                 if (!success)
                     return NotFound();
@@ -84,6 +110,19 @@ namespace Wildlife_API.Controllers
             {
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        private int? GetUserIdFromClaims()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null) return null;
+
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                return userId;
+            }
+
+            return null;
         }
 
 

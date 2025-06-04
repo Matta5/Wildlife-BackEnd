@@ -11,7 +11,8 @@ namespace Wildlife_BLL.Interfaces
         bool DeleteUser(int id);
         bool PatchUser(int id, PatchUserDTO userDTO);
         UserDTO? GetUserByUsername(string username);
-        UserDTO? GetUserByRefreshToken(string refreshToken);   
+        UserDTO? GetUserByRefreshToken(string refreshToken);
+        UserDTO? GetUserByEmail(string email);
 
     }
 }
