@@ -16,6 +16,47 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
         _client = factory.CreateClient();
     }
 
+    private async Task<int> CreateTestUserAsync(string username = "testuser", string email = "testuser@example.com")
+    {
+        CreateUserDTO dto = new CreateUserDTO
+        {
+            Username = username,
+            Email = email,
+            Password = "password123"
+        };
+
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/users", dto);
+        response.EnsureSuccessStatusCode();
+
+        UserDTO? createdUser = await response.Content.ReadFromJsonAsync<UserDTO>();
+        return 1;
+    }
+
+    [Fact]
+    public async Task GetUserById_ReturnsOk()
+    {
+        //arrange
+        int userId = await CreateTestUserAsync();
+
+        // Act
+        HttpResponseMessage response = await _client.GetAsync($"/users/{userId}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    }
+
+    [Fact]
+    public async Task GetUserById_ReturnsNotFound()
+    {
+        // Arrange
+        int nonExistentUserId = 999;
+        // Act
+        HttpResponseMessage response = await _client.GetAsync($"/users/{nonExistentUserId}");
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     [Fact]
     public async Task CreateUser_ReturnsOk()
     {
