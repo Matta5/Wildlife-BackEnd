@@ -12,13 +12,17 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IAuthService> _authServiceMock;
+    private readonly Mock<IImageClient> _imageClientMock;
+    private readonly ImageService _imageService;
     private readonly UserService _userService;
 
     public UserServiceTests()
     {
         _userRepoMock = new Mock<IUserRepository>();
         _authServiceMock = new Mock<IAuthService>();
-        _userService = new UserService(_userRepoMock.Object, _authServiceMock.Object);
+        _imageClientMock = new Mock<IImageClient>();
+        _imageService = new ImageService(_imageClientMock.Object);
+        _userService = new UserService(_userRepoMock.Object, _authServiceMock.Object, _imageService); 
     }
 
     [Fact]
@@ -68,7 +72,7 @@ public class UserServiceTests
         _userRepoMock.Setup(r => r.GetUserByUsername("uniqueuser")).Returns((UserDTO)null);
         _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateUserDTO>())).Returns(true);
         // Act
-        var result = _userService.CreateUser(newUser);
+        var result = _userService.CreateUser(newUser, null);
         // Assert
 
         Assert.True(result != null);
@@ -103,7 +107,7 @@ public class UserServiceTests
             .Returns(true);
 
         // Act
-        var result = _userService.PatchUser(userId, updateDto);
+        var result = _userService.PatchUser(userId, updateDto, null);
 
         // Assert
         Assert.True(result);
@@ -125,7 +129,7 @@ public class UserServiceTests
             .Returns(false);
 
         // Act
-        var result = _userService.PatchUser(userId, updateDto);
+        var result = _userService.PatchUser(userId, updateDto, null);
 
         // Assert
         Assert.False(result);

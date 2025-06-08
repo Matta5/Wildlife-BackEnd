@@ -15,7 +15,7 @@ public class ImageService
         if (file == null || file.Length == 0)
             return null;
 
-        using var stream = file.OpenReadStream();
+        using Stream stream = file.OpenReadStream();
         return await _imageClient.UploadImageAsync(stream, file.FileName);
     }
 }
