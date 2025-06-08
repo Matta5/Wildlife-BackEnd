@@ -67,20 +67,21 @@ namespace Wildlife_API.Controllers
         }
 
 
-        [HttpDelete("{id}")]
+        [HttpDelete]
         [Authorize]
-        public IActionResult DeleteUser(int id)
+        public IActionResult DeleteUser()
         {
             int? userId = GetUserIdFromClaims();
-            if (userId != id)
+
+            if (userId is not int id)
             {
-                return Unauthorized("You can only delete your own account");
+                return Unauthorized("You need to log into your account first");
             }
 
             return Ok(_userService.DeleteUser(id));
         }
 
-        [HttpPatch("{id}")]
+        [HttpPatch]
         [Authorize]
         public IActionResult PatchUser([FromForm] PatchUserDTO dto)
         {
@@ -89,7 +90,7 @@ namespace Wildlife_API.Controllers
                 int? userId = GetUserIdFromClaims();
                 if (userId == null)
                 {
-                    return Unauthorized("You can only update your own account");
+                    return Unauthorized("You need to log into your account firs");
                 } int id = userId.Value;
 
                 if (!string.IsNullOrWhiteSpace(dto.Username))

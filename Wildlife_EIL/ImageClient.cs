@@ -16,11 +16,11 @@ public class ImageClient : IImageClient
 
     public async Task<string> UploadImageAsync(Stream imageStream, string fileName)
     {
-        using var content = new MultipartFormDataContent();
+        using MultipartFormDataContent content = new MultipartFormDataContent();
 
         content.Add(new StringContent(_apiKey), "key");
 
-        var imageContent = new StreamContent(imageStream);
+        StreamContent imageContent = new StreamContent(imageStream);
         imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
         content.Add(imageContent, "image", fileName);
 
@@ -29,10 +29,10 @@ public class ImageClient : IImageClient
         if (!response.IsSuccessStatusCode)
             throw new Exception("Image upload failed: " + await response.Content.ReadAsStringAsync());
 
-        var json = await response.Content.ReadAsStringAsync();
+        string json = await response.Content.ReadAsStringAsync();
 
-        using var doc = JsonDocument.Parse(json);
-        var url = doc.RootElement.GetProperty("data").GetProperty("url").GetString();
+        using JsonDocument doc = JsonDocument.Parse(json);
+        string? url = doc.RootElement.GetProperty("data").GetProperty("url").GetString();
 
         return url!;
     }

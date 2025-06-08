@@ -6,7 +6,6 @@ using Wildlife_BLL.Interfaces;
 namespace Wildlife_BackEnd.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
     public class IdentifyController : ControllerBase
     {
         private readonly IdentifyService _identifyService;
@@ -17,7 +16,7 @@ namespace Wildlife_BackEnd.Controllers
         }
 
         [HttpPost("identify")]
-        [Consumes("multipart/form-data", "application/json")]
+        [Consumes("multipart/form-data")]
         public async Task<ActionResult<IdentifyResponseDTO>> Identify([FromForm] IdentifyRequestDTO request)
         {
             IdentifyResponseDTO result = await _identifyService.IdentifyAsync(request);
