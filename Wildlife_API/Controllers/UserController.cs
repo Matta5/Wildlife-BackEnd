@@ -33,7 +33,8 @@ namespace Wildlife_API.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateUser([FromBody] CreateUserDTO userDTO)
+        [Consumes("multipart/form-data")]
+        public IActionResult CreateUser([FromForm] CreateUserDTO userDTO)
         {
             UserDTO? existingUser = _userService.GetUserByUsername(userDTO.Username);
             if (existingUser != null)
@@ -47,7 +48,7 @@ namespace Wildlife_API.Controllers
                 return Conflict("Email already in use");
             }
 
-            var result = _userService.CreateUser(userDTO);
+            var result = _userService.CreateUser(userDTO, userDTO.ProfilePicture);
 
             Response.Cookies.Append("token", result.AccessToken, new CookieOptions
             {
@@ -81,7 +82,7 @@ namespace Wildlife_API.Controllers
 
         [HttpPatch("{id}")]
         [Authorize]
-        public IActionResult PatchUser([FromBody] PatchUserDTO dto)
+        public IActionResult PatchUser([FromForm] PatchUserDTO dto)
         {
             try
             {
@@ -100,7 +101,7 @@ namespace Wildlife_API.Controllers
                     }
                 }
 
-                bool success = _userService.PatchUser(id, dto);
+                bool success = _userService.PatchUser(id, dto, dto.ProfilePicture);
                 if (!success)
                     return NotFound();
 

@@ -2,7 +2,7 @@
 
 public class CreateEditObservationDTO
 {
-    public int? SpeciesId { get; set; }
+    public int SpeciesId { get; set; }
     public int UserId { get; set; }
     public string? Body { get; set; } = string.Empty;
     public DateTime? DateObserved { get; set; }

@@ -69,7 +69,7 @@ public class UserRepository : IUserRepository
                 Username = userDTO.Username,
                 Email = userDTO.Email,
                 PasswordHash = userDTO.Password,
-                ProfilePicture = userDTO.ProfilePicture,
+                ProfilePicture = userDTO.ProfilePictureURL,
                 CreatedAt = userDTO.CreatedAt,
                 RefreshToken = userDTO.RefreshToken,
                 RefreshTokenExpiry = userDTO.RefreshTokenExpiry
@@ -121,8 +121,8 @@ public class UserRepository : IUserRepository
         if (!string.IsNullOrWhiteSpace(dto.Password))
             user.PasswordHash = dto.Password;
 
-        if (!string.IsNullOrWhiteSpace(dto.ProfilePicture))
-            user.ProfilePicture = dto.ProfilePicture;
+        if (!string.IsNullOrWhiteSpace(dto.ProfilePictureURL))
+            user.ProfilePicture = dto.ProfilePictureURL;
 
         if (dto.CreatedAt.HasValue)
             user.CreatedAt = dto.CreatedAt.Value;

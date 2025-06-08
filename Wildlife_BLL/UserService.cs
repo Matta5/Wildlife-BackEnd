@@ -6,6 +6,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Wildlife_BLL
 {
@@ -13,11 +15,13 @@ namespace Wildlife_BLL
     {
         private readonly IUserRepository _userRepository;
         private readonly IAuthService _authService;
+        private readonly ImageService _imageService;
 
-        public UserService(IUserRepository userRepository, IAuthService authService)
+        public UserService(IUserRepository userRepository, IAuthService authService, ImageService imageService)
         {
             _userRepository = userRepository;
             _authService = authService;
+            _imageService = imageService;
         }
         public List<UserDTO> GetAllUsers()
         {
@@ -27,15 +31,18 @@ namespace Wildlife_BLL
         {
             return _userRepository.GetUserById(id);
         }
-        public AuthResultDTO CreateUser(CreateUserDTO userDTO)
+        public AuthResultDTO CreateUser(CreateUserDTO userDTO, IFormFile profilePicture)
         {
             PasswordHasher<object> passwordHasher = new PasswordHasher<object>();
             string passwordHash = passwordHasher.HashPassword(null, userDTO.Password);
+
+            Task<string> imageUrl = _imageService.UploadAsync(profilePicture);
 
             string refreshToken = _authService.GenerateRefreshToken();
             DateTime refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
 
             userDTO.Password = passwordHash;
+            userDTO.ProfilePictureURL = imageUrl.Result;
             userDTO.RefreshToken = refreshToken;
             userDTO.RefreshTokenExpiry = refreshTokenExpiry;
 
@@ -56,7 +63,7 @@ namespace Wildlife_BLL
             return _userRepository.DeleteUser(id);
         }
 
-        public bool PatchUser(int id, PatchUserDTO dto)
+        public bool PatchUser(int id, PatchUserDTO dto, IFormFile profilePicture)
         {
             UserDTO existingUser = _userRepository.GetUserById(id);
             if (existingUser == null)
@@ -67,6 +74,9 @@ namespace Wildlife_BLL
                 PasswordHasher<object> hasher = new();
                 dto.Password = hasher.HashPassword(null, dto.Password);
             }
+
+            Task<string> imageUrl = _imageService.UploadAsync(profilePicture);
+            dto.ProfilePictureURL = imageUrl.Result;
 
             return _userRepository.PatchUser(id, dto);
         }
@@ -103,7 +113,7 @@ namespace Wildlife_BLL
 
         public UserDTO GetUserByEmail(string email)
         {
-            return _userRepository.GetUserByUsername(email.ToLower());
+            return _userRepository.GetUserByEmail(email.ToLower());
 
         }
     }

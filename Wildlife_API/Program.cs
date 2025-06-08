@@ -80,6 +80,10 @@ builder.Services.AddHttpClient<IIdentifyClient, IdentifyClient>(client =>
 });
 builder.Services.AddScoped<IdentifyService>();
 
+builder.Services.AddHttpClient<IImageClient, ImageClient>();
+builder.Services.AddScoped<ImageService>();
+
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
