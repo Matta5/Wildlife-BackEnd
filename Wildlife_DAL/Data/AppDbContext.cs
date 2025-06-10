@@ -26,7 +26,6 @@ namespace Wildlife_DAL.Data
             modelBuilder.Entity<SpeciesEntity>(entity =>
             {
                 entity.HasKey(s => s.Id);
-                entity.HasIndex(s => s.InaturalistTaxonId).IsUnique();
 
                 // Only InaturalistTaxonId is required
                 entity.Property(s => s.InaturalistTaxonId).IsRequired();

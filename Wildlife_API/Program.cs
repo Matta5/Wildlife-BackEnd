@@ -71,6 +71,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<IObservationRepository, ObservationRepository>();
 builder.Services.AddScoped<ObservationService>();
+builder.Services.AddScoped<ISpeciesRepository, SpeciesRepository>();
+builder.Services.AddScoped<SpeciesService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddHttpClient<IIdentifyClient, IdentifyClient>(client =>
@@ -79,6 +81,8 @@ builder.Services.AddHttpClient<IIdentifyClient, IdentifyClient>(client =>
     client.DefaultRequestHeaders.Add("User-Agent", "WildlifeApp/1.0");
 });
 builder.Services.AddScoped<IdentifyService>();
+
+builder.Services.AddHttpClient<IExternalSpeciesClient, ExternalSpeciesClient>();
 
 builder.Services.AddHttpClient<IImageClient, ImageClient>();
 builder.Services.AddScoped<ImageService>();

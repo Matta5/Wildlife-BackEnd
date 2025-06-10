@@ -4,8 +4,9 @@ namespace Wildlife_BLL.Interfaces;
 
 public interface IObservationRepository
 {
-    void CreateObservation(CreateEditObservationDTO observation);
+    void CreateObservation(CreateObservationDTO observation);
+    bool DeleteObservation(int id);
     ObservationDTO? GetObservationById(int id);
-    List<ObservationDTO> GetObservations();
     List<ObservationDTO> GetObservationsByUser(int userId);
+    bool PatchObservation(int value, PatchObservationDTO dto);
 }

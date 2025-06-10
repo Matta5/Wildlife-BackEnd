@@ -1,6 +1,6 @@
 ﻿namespace Wildlife_BLL.DTO;
 
-public class CreateEditObservationDTO
+public class CreateObservationDTO
 {
     public int SpeciesId { get; set; }
     public int UserId { get; set; }
@@ -8,4 +8,5 @@ public class CreateEditObservationDTO
     public DateTime? DateObserved { get; set; }
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
+    public string? ImageUrl { get; set; }
 }
