@@ -12,8 +12,8 @@ using Wildlife_DAL.Data;
 namespace Wildlife_DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250603211410_addedImageToObservation")]
-    partial class addedImageToObservation
+    [Migration("20250610125700_InitialRecreate")]
+    partial class InitialRecreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,7 +51,7 @@ namespace Wildlife_DAL.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("double precision");
 
-                    b.Property<int?>("SpeciesId")
+                    b.Property<int>("SpeciesId")
                         .HasColumnType("integer");
 
                     b.Property<int>("UserId")
@@ -59,9 +59,80 @@ namespace Wildlife_DAL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SpeciesId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Observations");
+                });
+
+            modelBuilder.Entity("Wildlife_DAL.Entities.SpeciesEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClassName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CommonName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FamilyName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("GenusName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("IconicTaxonName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("InaturalistTaxonId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsPreloaded")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("KingdomName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("OrderName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PhylumName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ScientificName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("SpeciesName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InaturalistTaxonId")
+                        .IsUnique();
+
+                    b.ToTable("Species");
                 });
 
             modelBuilder.Entity("Wildlife_DAL.Entities.UserEntity", b =>
@@ -104,13 +175,26 @@ namespace Wildlife_DAL.Migrations
 
             modelBuilder.Entity("Wildlife_DAL.Entities.ObservationEntity", b =>
                 {
+                    b.HasOne("Wildlife_DAL.Entities.SpeciesEntity", "Species")
+                        .WithMany("Observations")
+                        .HasForeignKey("SpeciesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Wildlife_DAL.Entities.UserEntity", "User")
                         .WithMany("Observations")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Species");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wildlife_DAL.Entities.SpeciesEntity", b =>
+                {
+                    b.Navigation("Observations");
                 });
 
             modelBuilder.Entity("Wildlife_DAL.Entities.UserEntity", b =>

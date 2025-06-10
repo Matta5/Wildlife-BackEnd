@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Wildlife_BLL.Interfaces;
 
+namespace Wildlife_BLL;
 public class ImageService
 {
     private readonly IImageClient _imageClient;

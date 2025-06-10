@@ -26,9 +26,23 @@ namespace Wildlife_DAL.Data
             modelBuilder.Entity<SpeciesEntity>(entity =>
             {
                 entity.HasKey(s => s.Id);
-                entity.Property(s => s.ScientificName).IsRequired();
-                entity.Property(s => s.CommonName).IsRequired();
-                entity.Property(s => s.ImageUrl).IsRequired();
+                entity.HasIndex(s => s.InaturalistTaxonId).IsUnique();
+
+                // Only InaturalistTaxonId is required
+                entity.Property(s => s.InaturalistTaxonId).IsRequired();
+
+                // All other fields are nullable
+                entity.Property(s => s.ScientificName).HasMaxLength(255).IsRequired(false);
+                entity.Property(s => s.CommonName).HasMaxLength(255).IsRequired(false);
+                entity.Property(s => s.ImageUrl).HasMaxLength(500).IsRequired(false);
+                entity.Property(s => s.IconicTaxonName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.KingdomName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.PhylumName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.ClassName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.OrderName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.FamilyName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.GenusName).HasMaxLength(100).IsRequired(false);
+                entity.Property(s => s.SpeciesName).HasMaxLength(100).IsRequired(false);
             });
 
             modelBuilder.Entity<ObservationEntity>(entity =>
