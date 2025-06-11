@@ -16,20 +16,40 @@ namespace Wildlife_BLL
         private readonly IUserRepository _userRepository;
         private readonly IAuthService _authService;
         private readonly ImageService _imageService;
+        private readonly ObservationService _observationService;
 
-        public UserService(IUserRepository userRepository, IAuthService authService, ImageService imageService)
+        public UserService(IUserRepository userRepository, IAuthService authService, ImageService imageService, ObservationService observationService)
         {
             _userRepository = userRepository;
             _authService = authService;
             _imageService = imageService;
+            _observationService = observationService;
         }
         public List<UserDTO> GetAllUsers()
         {
-            return _userRepository.GetAllUsers();
+            var users = _userRepository.GetAllUsers();
+            
+            // Populate statistics for each user
+            foreach (var user in users)
+            {
+                user.TotalObservations = _observationService.GetTotalObservationsByUser(user.Id);
+                user.UniqueSpeciesObserved = _observationService.GetUniqueSpeciesCountByUser(user.Id);
+            }
+            
+            return users;
         }
         public UserDTO? GetUserById(int id)
         {
-            return _userRepository.GetUserById(id);
+            var user = _userRepository.GetUserById(id);
+            
+            if (user != null)
+            {
+                // Populate statistics
+                user.TotalObservations = _observationService.GetTotalObservationsByUser(user.Id);
+                user.UniqueSpeciesObserved = _observationService.GetUniqueSpeciesCountByUser(user.Id);
+            }
+            
+            return user;
         }
         public AuthResultDTO CreateUser(CreateUserDTO userDTO, IFormFile profilePicture)
         {
@@ -47,6 +67,38 @@ namespace Wildlife_BLL
             userDTO.RefreshTokenExpiry = refreshTokenExpiry;
 
             _userRepository.CreateUser(userDTO);
+
+            UserDTO? user = _userRepository.GetUserByUsername(userDTO.Username);
+            string accessToken = _authService.GenerateAccessToken(user);
+
+            return new AuthResultDTO
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            };
+        }
+
+        public AuthResultDTO CreateUserSimple(CreateUserSimpleDTO userDTO)
+        {
+            PasswordHasher<object> passwordHasher = new PasswordHasher<object>();
+            string passwordHash = passwordHasher.HashPassword(null, userDTO.Password);
+
+            string refreshToken = _authService.GenerateRefreshToken();
+            DateTime refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+            // Convert to CreateUserDTO for repository
+            var createUserDTO = new CreateUserDTO
+            {
+                Username = userDTO.Username,
+                Email = userDTO.Email,
+                Password = passwordHash,
+                ProfilePictureURL = null, // No profile picture for simple creation
+                RefreshToken = refreshToken,
+                RefreshTokenExpiry = refreshTokenExpiry,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _userRepository.CreateUser(createUserDTO);
 
             UserDTO? user = _userRepository.GetUserByUsername(userDTO.Username);
             string accessToken = _authService.GenerateAccessToken(user);
@@ -83,12 +135,30 @@ namespace Wildlife_BLL
 
         public UserDTO? GetUserByUsername(string username)
         {
-            return _userRepository.GetUserByUsername(username.ToLower());
+            var user = _userRepository.GetUserByUsername(username.ToLower());
+            
+            if (user != null)
+            {
+                // Populate statistics
+                user.TotalObservations = _observationService.GetTotalObservationsByUser(user.Id);
+                user.UniqueSpeciesObserved = _observationService.GetUniqueSpeciesCountByUser(user.Id);
+            }
+            
+            return user;
         }
 
         public UserDTO? GetUserByRefreshToken(string refreshToken)
         {
-            return _userRepository.GetUserByRefreshToken(refreshToken);
+            var user = _userRepository.GetUserByRefreshToken(refreshToken);
+            
+            if (user != null)
+            {
+                // Populate statistics
+                user.TotalObservations = _observationService.GetTotalObservationsByUser(user.Id);
+                user.UniqueSpeciesObserved = _observationService.GetUniqueSpeciesCountByUser(user.Id);
+            }
+            
+            return user;
         }
 
         public bool VerifyPassword(string password, string passwordHash)
@@ -113,8 +183,16 @@ namespace Wildlife_BLL
 
         public UserDTO GetUserByEmail(string email)
         {
-            return _userRepository.GetUserByEmail(email.ToLower());
-
+            var user = _userRepository.GetUserByEmail(email.ToLower());
+            
+            if (user != null)
+            {
+                // Populate statistics
+                user.TotalObservations = _observationService.GetTotalObservationsByUser(user.Id);
+                user.UniqueSpeciesObserved = _observationService.GetUniqueSpeciesCountByUser(user.Id);
+            }
+            
+            return user;
         }
     }
 }

@@ -38,6 +38,21 @@ namespace Wildlife_BLL
             _observationRepository.CreateObservation(createEditObservationDTO);
         }
 
+        public void CreateObservationSimple(int userId, CreateObservationSimpleDTO dto)
+        {
+            CreateObservationDTO createObservationDTO = new CreateObservationDTO
+            {
+                SpeciesId = dto.SpeciesId,
+                UserId = userId,
+                Body = dto.Body,
+                DateObserved = dto.DateObserved,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                ImageUrl = null // No image for simple creation
+            };
+            _observationRepository.CreateObservation(createObservationDTO);
+        }
+
         public async Task<string?> UpdateObservationImage(int observationId, IFormFile imageFile)
         {
             if (imageFile == null || imageFile.Length == 0)
@@ -75,6 +90,21 @@ namespace Wildlife_BLL
         public bool PatchObservation(int value, PatchObservationDTO dto)
         {
             return _observationRepository.PatchObservation(value, dto);
+        }
+
+        public int GetTotalObservationsByUser(int userId)
+        {
+            return _observationRepository.GetTotalObservationsByUser(userId);
+        }
+
+        public int GetUniqueSpeciesCountByUser(int userId)
+        {
+            return _observationRepository.GetUniqueSpeciesCountByUser(userId);
+        }
+
+        public List<ObservationDTO> GetAllObservations(int limit = 30)
+        {
+            return _observationRepository.GetAllObservations(limit);
         }
     }
 

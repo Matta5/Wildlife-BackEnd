@@ -66,6 +66,38 @@ namespace Wildlife_API.Controllers
             return Ok(new{message = "User created successfully"});
         }
 
+        [HttpPost("simple")]
+        public IActionResult CreateUserSimple([FromBody] CreateUserSimpleDTO userDTO)
+        {
+            UserDTO? existingUser = _userService.GetUserByUsername(userDTO.Username);
+            if (existingUser != null)
+            {
+                return Conflict("Username already exists");
+            }
+
+            UserDTO? existingEmail = _userService.GetUserByEmail(userDTO.Email);
+            if (existingEmail != null)
+            {
+                return Conflict("Email already in use");
+            }
+
+            var result = _userService.CreateUserSimple(userDTO);
+
+            Response.Cookies.Append("token", result.AccessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            return Ok(new { message = "User created successfully" });
+        }
 
         [HttpDelete]
         [Authorize]

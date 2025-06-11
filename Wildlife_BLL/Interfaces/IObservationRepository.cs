@@ -9,4 +9,11 @@ public interface IObservationRepository
     ObservationDTO? GetObservationById(int id);
     List<ObservationDTO> GetObservationsByUser(int userId);
     bool PatchObservation(int value, PatchObservationDTO dto);
+    
+    // Statistics methods
+    int GetTotalObservationsByUser(int userId);
+    int GetUniqueSpeciesCountByUser(int userId);
+    
+    // Get all observations with limit
+    List<ObservationDTO> GetAllObservations(int limit = 30);
 }

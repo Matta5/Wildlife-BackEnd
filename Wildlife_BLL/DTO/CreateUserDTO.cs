@@ -25,4 +25,16 @@ namespace Wildlife_BLL.DTO
         public string RefreshToken { get; set; } = "";
         public DateTime RefreshTokenExpiry { get; set; } = DateTime.UtcNow.AddDays(7);
     }
+
+    public class CreateUserSimpleDTO
+    {
+        [Required]
+        public string Username { get; set; } = string.Empty;
+        [Required]
+        [EmailAddress(ErrorMessage = "Invalid Email Address")]
+        public string Email { get; set; }
+        [Required]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters long.")]
+        public string Password { get; set; } = string.Empty;
+    }
 }

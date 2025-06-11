@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Wildlife_BLL.DTO;
 using Wildlife_BLL;
 using Wildlife_BLL.Interfaces;
+using System.Net.Http;
 
 namespace Wildlife_API.Controllers;
 
@@ -69,6 +70,33 @@ public class SpeciesController : ControllerBase
             return NotFound($"Species with taxon ID {taxonId} not found on iNaturalist");
 
         return Ok(species);
+    }
+
+    [HttpGet("debug/inaturalist/{taxonId:long}")]
+    public async Task<ActionResult> DebugInaturalist(long taxonId)
+    {
+        try
+        {
+            var url = $"https://api.inaturalist.org/v1/taxa/{taxonId}";
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "WildlifeApp/1.0");
+            
+            var response = await httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            return Ok(new 
+            {
+                StatusCode = (int)response.StatusCode,
+                StatusMessage = response.StatusCode.ToString(),
+                Content = content,
+                ContentLength = content.Length
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
     }
 
     [HttpGet("popular")]

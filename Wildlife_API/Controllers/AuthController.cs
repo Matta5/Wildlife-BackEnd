@@ -149,7 +149,9 @@ public class AuthController : ControllerBase
             Username = user.Username,
             Email = user.Email,
             ProfilePicture = user.ProfilePicture,
-            CreatedAt = user.CreatedAt
+            CreatedAt = user.CreatedAt,
+            TotalObservations = user.TotalObservations,
+            UniqueSpeciesObserved = user.UniqueSpeciesObserved
         };
         return Ok(authenticatedUserDto);
     }

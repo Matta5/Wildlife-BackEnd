@@ -37,21 +37,27 @@ namespace Wildlife_DAL
         {
             try
             {
-                _context.Observations.Add(new ObservationEntity
+                var entity = new ObservationEntity
                 {
                     SpeciesId = observation.SpeciesId,
                     UserId = observation.UserId,
                     Body = observation.Body,
-                    DateObserved = observation.DateObserved,
+                    DateObserved = observation.DateObserved?.ToUniversalTime(),
                     Latitude = observation.Latitude,
                     Longitude = observation.Longitude,
                     ImageUrl = observation.ImageUrl
-                });
+                };
+
+                Console.WriteLine($"Creating observation: SpeciesId={entity.SpeciesId}, UserId={entity.UserId}, Body={entity.Body}, DateObserved={entity.DateObserved}, Lat={entity.Latitude}, Lng={entity.Longitude}");
+
+                _context.Observations.Add(entity);
                 _context.SaveChanges();
             }
             catch (Exception e)
             {
-                throw new Exception("Failed to create observation", e);
+                Console.WriteLine($"Database error creating observation: {e.Message}");
+                Console.WriteLine($"Inner exception: {e.InnerException?.Message}");
+                throw new Exception($"Failed to create observation: {e.Message}", e);
             }
         }
 
@@ -135,6 +141,67 @@ namespace Wildlife_DAL
 
             _context.SaveChanges();
             return true;
+        }
+
+        public int GetTotalObservationsByUser(int userId)
+        {
+            return _context.Observations
+                .Where(o => o.UserId == userId)
+                .Count();
+        }
+
+        public int GetUniqueSpeciesCountByUser(int userId)
+        {
+            return _context.Observations
+                .Where(o => o.UserId == userId)
+                .Select(o => o.SpeciesId)
+                .Distinct()
+                .Count();
+        }
+
+        public List<ObservationDTO> GetAllObservations(int limit = 30)
+        {
+            var observations = _context.Observations
+                .OrderByDescending(o => o.DatePosted)
+                .Take(limit)
+                .Select(o => new ObservationDTO
+                {
+                    Id = o.Id,
+                    SpeciesId = o.SpeciesId,
+                    UserId = o.UserId,
+                    Body = o.Body,
+                    DateObserved = o.DateObserved,
+                    DatePosted = o.DatePosted,
+                    Latitude = o.Latitude,
+                    Longitude = o.Longitude,
+                    ImageUrl = o.ImageUrl,
+                    User = new MinimalUserDTO
+                    {
+                        Username = o.User.Username,
+                        ProfilePicture = o.User.ProfilePicture,
+                    },
+                    Species = new SpeciesDTO
+                    {
+                        Id = o.Species.Id,
+                        CommonName = o.Species.CommonName,
+                        ScientificName = o.Species.ScientificName,
+                        InaturalistTaxonId = o.Species.InaturalistTaxonId,
+                        ImageUrl = o.Species.ImageUrl,
+                        IconicTaxonName = o.Species.IconicTaxonName,
+                        Taxonomy = new TaxonomyDTO
+                        {
+                            IconicTaxon = o.Species.IconicTaxonName,
+                            Kingdom = o.Species.KingdomName,
+                            Phylum = o.Species.PhylumName,
+                            Class = o.Species.ClassName,
+                            Order = o.Species.OrderName,
+                            Family = o.Species.FamilyName,
+                            Genus = o.Species.GenusName,
+                        }
+                    }
+                })
+                .ToList();
+            return observations;
         }
     }
 }

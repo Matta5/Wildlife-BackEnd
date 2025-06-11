@@ -82,11 +82,14 @@ builder.Services.AddHttpClient<IIdentifyClient, IdentifyClient>(client =>
 });
 builder.Services.AddScoped<IdentifyService>();
 
-builder.Services.AddHttpClient<IExternalSpeciesClient, ExternalSpeciesClient>();
+builder.Services.AddHttpClient<IExternalSpeciesClient, ExternalSpeciesClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "WildlifeApp/1.0");
+});
 
 builder.Services.AddHttpClient<IImageClient, ImageClient>();
 builder.Services.AddScoped<ImageService>();
-
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -13,5 +13,9 @@ namespace Wildlife_BLL.DTO
         public string Email { get; set; }
         public string? ProfilePicture { get; set; }
         public DateTime CreatedAt { get; set; }
+        
+        // Statistics properties
+        public int TotalObservations { get; set; }
+        public int UniqueSpeciesObserved { get; set; }
     }
 }
