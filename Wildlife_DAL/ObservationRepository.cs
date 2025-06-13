@@ -37,12 +37,34 @@ namespace Wildlife_DAL
         {
             try
             {
+                // Convert DateTime to UTC properly
+                DateTime? dateObserved = null;
+                if (observation.DateObserved.HasValue)
+                {
+                    var date = observation.DateObserved.Value;
+                    if (date.Kind == DateTimeKind.Unspecified)
+                    {
+                        // Assume local time and convert to UTC
+                        dateObserved = DateTime.SpecifyKind(date, DateTimeKind.Local).ToUniversalTime();
+                    }
+                    else if (date.Kind == DateTimeKind.Local)
+                    {
+                        // Convert local to UTC
+                        dateObserved = date.ToUniversalTime();
+                    }
+                    else
+                    {
+                        // If already UTC, use as is
+                        dateObserved = date;
+                    }
+                }
+
                 var entity = new ObservationEntity
                 {
                     SpeciesId = observation.SpeciesId,
                     UserId = observation.UserId,
                     Body = observation.Body,
-                    DateObserved = observation.DateObserved?.ToUniversalTime(),
+                    DateObserved = dateObserved,
                     Latitude = observation.Latitude,
                     Longitude = observation.Longitude,
                     ImageUrl = observation.ImageUrl
@@ -131,7 +153,18 @@ namespace Wildlife_DAL
             if (!string.IsNullOrEmpty(dto.Body))
                 observation.Body = dto.Body;
             if (dto.DateObserved != null)
-                observation.DateObserved = dto.DateObserved.Value;
+            {
+                var dateObserved = dto.DateObserved.Value;
+                if (dateObserved.Kind == DateTimeKind.Unspecified)
+                {
+                    dateObserved = DateTime.SpecifyKind(dateObserved, DateTimeKind.Local).ToUniversalTime();
+                }
+                else if (dateObserved.Kind == DateTimeKind.Local)
+                {
+                    dateObserved = dateObserved.ToUniversalTime();
+                }
+                observation.DateObserved = dateObserved;
+            }
             if (dto.Latitude != null)
                 observation.Latitude = dto.Latitude.Value;
             if (dto.Longitude != null)
@@ -159,9 +192,17 @@ namespace Wildlife_DAL
                 .Count();
         }
 
-        public List<ObservationDTO> GetAllObservations(int limit = 30)
+        public List<ObservationDTO> GetAllObservations(int limit = 30, int? currentUserId = null, bool excludeCurrentUser = false)
         {
-            var observations = _context.Observations
+            var query = _context.Observations.AsQueryable();
+            
+            // Filter out current user's observations if requested
+            if (excludeCurrentUser && currentUserId.HasValue)
+            {
+                query = query.Where(o => o.UserId != currentUserId.Value);
+            }
+            
+            var observations = query
                 .OrderByDescending(o => o.DatePosted)
                 .Take(limit)
                 .Select(o => new ObservationDTO

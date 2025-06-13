@@ -102,9 +102,9 @@ namespace Wildlife_BLL
             return _observationRepository.GetUniqueSpeciesCountByUser(userId);
         }
 
-        public List<ObservationDTO> GetAllObservations(int limit = 30)
+        public List<ObservationDTO> GetAllObservations(int limit = 30, int? currentUserId = null, bool excludeCurrentUser = false)
         {
-            return _observationRepository.GetAllObservations(limit);
+            return _observationRepository.GetAllObservations(limit, currentUserId, excludeCurrentUser);
         }
     }
 

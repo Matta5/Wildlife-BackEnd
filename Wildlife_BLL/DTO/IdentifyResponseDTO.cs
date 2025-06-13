@@ -14,5 +14,9 @@ namespace Wildlife_BLL.DTO
         public double? Confidence { get; set; }
         public string? ErrorMessage { get; set; }
         public List<TaxonResult>? AlternativeResults { get; set; }
+        
+        // Import-related properties
+        public int? ImportedSpeciesId { get; set; }
+        public string? ImportMessage { get; set; }
     }
 }

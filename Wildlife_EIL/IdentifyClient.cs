@@ -99,12 +99,34 @@ public class IdentifyClient : IIdentifyClient
                         ? sciEl.GetString() : null;
                     var confidence = result.TryGetProperty("combined_score", out var scoreEl)
                         ? scoreEl.GetDouble() : 0.0;
+                    
+                    // Extract taxon ID for import
+                    var taxonId = taxon.TryGetProperty("id", out var idEl)
+                        ? idEl.GetInt64() : (long?)null;
+                    
+                    // Extract additional taxon information
+                    var iconicTaxonName = taxon.TryGetProperty("iconic_taxon_name", out var iconicEl)
+                        ? iconicEl.GetString() : null;
+                    var rank = taxon.TryGetProperty("rank", out var rankEl)
+                        ? rankEl.GetString() : null;
+                    
+                    // Extract default photo if available
+                    string? imageUrl = null;
+                    if (taxon.TryGetProperty("default_photo", out var photoEl))
+                    {
+                        imageUrl = photoEl.TryGetProperty("medium_url", out var urlEl)
+                            ? urlEl.GetString() : null;
+                    }
 
                     taxonResults.Add(new TaxonResult
                     {
                         PreferredEnglishName = commonName,
                         ScientificName = scientificName,
-                        Confidence = Math.Round(confidence * 100, 2) // Convert to percentage
+                        Confidence = Math.Round(confidence * 100, 2), // Convert to percentage
+                        TaxonId = taxonId,
+                        IconicTaxonName = iconicTaxonName,
+                        Rank = rank,
+                        ImageUrl = imageUrl
                     });
                 }
             }
@@ -116,7 +138,7 @@ public class IdentifyClient : IIdentifyClient
                 PreferredEnglishName = topResult?.PreferredEnglishName ?? "Unknown",
                 ScientificName = topResult?.ScientificName,
                 Confidence = topResult?.Confidence,
-                AlternativeResults = taxonResults.Skip(1).ToList()
+                AlternativeResults = taxonResults.ToList() // Include all results including the first one
             };
         }
         catch (JsonException ex)

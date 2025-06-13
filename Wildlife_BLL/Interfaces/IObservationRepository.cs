@@ -15,5 +15,5 @@ public interface IObservationRepository
     int GetUniqueSpeciesCountByUser(int userId);
     
     // Get all observations with limit
-    List<ObservationDTO> GetAllObservations(int limit = 30);
+    List<ObservationDTO> GetAllObservations(int limit = 30, int? currentUserId = null, bool excludeCurrentUser = false);
 }
