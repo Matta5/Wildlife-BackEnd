@@ -58,6 +58,43 @@ public class SpeciesController : ControllerBase
         if (!species.Any())
             return NotFound($"No species found for '{q}' in local database or iNaturalist");
 
+        // Try to automatically import species that were found on iNaturalist but not in local database
+        var importedSpecies = new List<SpeciesDTO>();
+        foreach (var foundSpecies in species)
+        {
+            try
+            {
+                // Check if this species exists in our local database
+                var existingSpecies = await _speciesService.SearchSpeciesAsync(foundSpecies.ScientificName, 1);
+                
+                if (!existingSpecies.Any(s => s.ScientificName.Equals(foundSpecies.ScientificName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Species not in local database, try to import it
+                    if (foundSpecies.InaturalistTaxonId > 0)
+                    {
+                        var importedSpeciesItem = await _speciesService.ImportSpeciesAsync(foundSpecies.InaturalistTaxonId);
+                        if (importedSpeciesItem != null)
+                        {
+                            importedSpecies.Add(importedSpeciesItem);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't fail the entire request
+                Console.WriteLine($"Error importing species {foundSpecies.ScientificName}: {ex.Message}");
+            }
+        }
+
+        // If we imported any species, return the updated list
+        if (importedSpecies.Any())
+        {
+            // Get the updated list with imported species
+            var updatedSpecies = await _speciesService.FindSpeciesAsync(q, limit);
+            return Ok(updatedSpecies);
+        }
+
         return Ok(species);
     }
 
