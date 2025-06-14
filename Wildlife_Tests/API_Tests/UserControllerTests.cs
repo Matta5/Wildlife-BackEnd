@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Wildlife_BLL.DTO;
 using Xunit;
 
-namespace Wildlife_Tests.BLL_Tests;
+namespace Wildlife_Tests.API_Tests;
 
 public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
@@ -65,9 +65,21 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetAllUsers_ReturnsOk()
+    {
+        // Act
+        HttpResponseMessage response = await _client.GetAsync("/users");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var users = await response.Content.ReadFromJsonAsync<List<UserDTO>>();
+        Assert.NotNull(users);
+    }
+
+    [Fact]
     public async Task GetUserById_ReturnsOk()
     {
-        //arrange
+        // Arrange
         int userId = await CreateTestUserAsync();
 
         // Act
@@ -75,6 +87,9 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var user = await response.Content.ReadFromJsonAsync<UserDTO>();
+        Assert.NotNull(user);
+        Assert.Equal(userId, user.Id);
     }
 
     [Fact]
@@ -82,8 +97,10 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
     {
         // Arrange
         int nonExistentUserId = 999;
+
         // Act
         HttpResponseMessage response = await _client.GetAsync($"/users/{nonExistentUserId}");
+
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -99,6 +116,8 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        Assert.NotNull(result);
     }
 
     [Fact]
@@ -121,5 +140,102 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
         string responseContent = await secondResponse.Content.ReadAsStringAsync();
         Assert.Contains("Username already exists", responseContent);
+    }
+
+    [Fact]
+    public async Task CreateUser_WithExistingEmail_ReturnsConflict()
+    {
+        // Arrange - Create first user using form data
+        using var firstUserForm = CreateUserFormData("user1", "duplicate@gmail.com", "password123", "test1.jpg");
+
+        // Act - Create first user (should succeed)
+        HttpResponseMessage firstResponse = await _client.PostAsync("/users", firstUserForm);
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+        // Arrange - Create second user with same email but different username
+        using var secondUserForm = CreateUserFormData("user2", "duplicate@gmail.com", "password456", "test2.jpg");
+
+        // Act - Try to create second user with duplicate email
+        HttpResponseMessage secondResponse = await _client.PostAsync("/users", secondUserForm);
+
+        // Assert - Should return Conflict status
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+        string responseContent = await secondResponse.Content.ReadAsStringAsync();
+        Assert.Contains("Email already in use", responseContent);
+    }
+
+    [Fact]
+    public async Task CreateUserSimple_ReturnsOk()
+    {
+        // Arrange
+        var userData = new CreateUserSimpleDTO
+        {
+            Username = "simpleuser",
+            Email = "simple@example.com",
+            Password = "password123"
+        };
+
+        // Act
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/users/simple", userData);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task CreateUserSimple_WithExistingUsername_ReturnsConflict()
+    {
+        // Arrange - Create first user
+        var firstUser = new CreateUserSimpleDTO
+        {
+            Username = "simpleuser2",
+            Email = "first@example.com",
+            Password = "password123"
+        };
+
+        HttpResponseMessage firstResponse = await _client.PostAsJsonAsync("/users/simple", firstUser);
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+        // Arrange - Create second user with same username
+        var secondUser = new CreateUserSimpleDTO
+        {
+            Username = "simpleuser2",
+            Email = "second@example.com",
+            Password = "password456"
+        };
+
+        // Act
+        HttpResponseMessage secondResponse = await _client.PostAsJsonAsync("/users/simple", secondUser);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+        string responseContent = await secondResponse.Content.ReadAsStringAsync();
+        Assert.Contains("Username already exists", responseContent);
+    }
+
+    [Fact]
+    public async Task DeleteUser_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Act
+        HttpResponseMessage response = await _client.DeleteAsync("/users");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatchUser_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent("newusername"), "Username");
+
+        // Act
+        HttpResponseMessage response = await _client.PatchAsync("/users", form);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }
