@@ -18,6 +18,7 @@ namespace Wildlife_DAL
         {
             var observations = _context.Observations
                 .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.DatePosted)
                 .Select(o => new ObservationDTO
                 {
                     Id = o.Id,
@@ -25,9 +26,34 @@ namespace Wildlife_DAL
                     UserId = o.UserId,
                     Body = o.Body,
                     DateObserved = o.DateObserved,
+                    DatePosted = o.DatePosted,
                     Latitude = o.Latitude,
                     Longitude = o.Longitude,
-                    ImageUrl = o.ImageUrl
+                    ImageUrl = o.ImageUrl,
+                    User = new MinimalUserDTO
+                    {
+                        Username = o.User.Username,
+                        ProfilePicture = o.User.ProfilePicture,
+                    },
+                    Species = new SpeciesDTO
+                    {
+                        Id = o.Species.Id,
+                        CommonName = o.Species.CommonName,
+                        ScientificName = o.Species.ScientificName,
+                        InaturalistTaxonId = o.Species.InaturalistTaxonId,
+                        ImageUrl = o.Species.ImageUrl,
+                        IconicTaxonName = o.Species.IconicTaxonName,
+                        Taxonomy = new TaxonomyDTO
+                        {
+                            IconicTaxon = o.Species.IconicTaxonName,
+                            Kingdom = o.Species.KingdomName,
+                            Phylum = o.Species.PhylumName,
+                            Class = o.Species.ClassName,
+                            Order = o.Species.OrderName,
+                            Family = o.Species.FamilyName,
+                            Genus = o.Species.GenusName,
+                        }
+                    }
                 })
                 .ToList();
             return observations;

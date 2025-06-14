@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Wildlife_BLL.DTO;
 using Xunit;
 
-namespace Wildlife_API_Tests;
+namespace Wildlife_Tests.BLL_Tests;
 
 public class UserControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
