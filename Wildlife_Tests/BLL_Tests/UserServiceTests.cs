@@ -31,23 +31,49 @@ public class UserServiceTests
     }
 
     [Fact]
-    public void GetAllUsers_ReturnsAllUsers()
+    public void GetAllUsers_ReturnsAllUsersWithStatistics()
     {
         // Arrange
-        var expectedUsers = new List<UserDTO> { new UserDTO { Id = 1, Username = "test" } };
+        var expectedUsers = new List<UserDTO> 
+        { 
+            new UserDTO { Id = 1, Username = "test1" },
+            new UserDTO { Id = 2, Username = "test2" }
+        };
         _userRepoMock.Setup(r => r.GetAllUsers()).Returns(expectedUsers);
         _observationRepoMock.Setup(r => r.GetTotalObservationsByUser(1)).Returns(5);
         _observationRepoMock.Setup(r => r.GetUniqueSpeciesCountByUser(1)).Returns(3);
+        _observationRepoMock.Setup(r => r.GetTotalObservationsByUser(2)).Returns(10);
+        _observationRepoMock.Setup(r => r.GetUniqueSpeciesCountByUser(2)).Returns(7);
 
         // Act
         var result = _userService.GetAllUsers();
 
         // Assert
         Assert.Equal(expectedUsers, result);
+        Assert.Equal(5, result[0].TotalObservations);
+        Assert.Equal(3, result[0].UniqueSpeciesObserved);
+        Assert.Equal(10, result[1].TotalObservations);
+        Assert.Equal(7, result[1].UniqueSpeciesObserved);
+        _userRepoMock.Verify(r => r.GetAllUsers(), Times.Once);
     }
 
     [Fact]
-    public void GetUserById_ReturnsUser_WhenFound()
+    public void GetAllUsers_ReturnsEmptyList_WhenNoUsers()
+    {
+        // Arrange
+        var expectedUsers = new List<UserDTO>();
+        _userRepoMock.Setup(r => r.GetAllUsers()).Returns(expectedUsers);
+
+        // Act
+        var result = _userService.GetAllUsers();
+
+        // Assert
+        Assert.Empty(result);
+        _userRepoMock.Verify(r => r.GetAllUsers(), Times.Once);
+    }
+
+    [Fact]
+    public void GetUserById_ReturnsUserWithStatistics_WhenFound()
     {
         // Arrange
         var expectedUser = new UserDTO { Id = 1, Username = "test" };
@@ -60,6 +86,9 @@ public class UserServiceTests
 
         // Assert
         Assert.Equal(expectedUser, result);
+        Assert.Equal(5, result.TotalObservations);
+        Assert.Equal(3, result.UniqueSpeciesObserved);
+        _userRepoMock.Verify(r => r.GetUserById(1), Times.Once);
     }
 
     [Fact]
@@ -67,35 +96,304 @@ public class UserServiceTests
     {
         // Arrange
         _userRepoMock.Setup(r => r.GetUserById(1)).Returns((UserDTO?)null);
+        
         // Act
         var result = _userService.GetUserById(1);
+        
         // Assert
         Assert.Null(result);
+        _userRepoMock.Verify(r => r.GetUserById(1), Times.Once);
+        _observationRepoMock.Verify(r => r.GetTotalObservationsByUser(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
-    public void CreateUser_CreatesUser_WhenUsernameIsUnique()
+    public void CreateUser_CreatesUserWithProfilePicture_WhenValidData()
     {
         // Arrange
-        var newUser = new CreateUserDTO { Username = "uniqueUser", Password = "pass" };
+        var newUser = new CreateUserDTO { Username = "uniqueUser", Password = "pass", Email = "test@example.com" };
         var mockFile = new Mock<IFormFile>();
         mockFile.Setup(f => f.Length).Returns(1024L);
         mockFile.Setup(f => f.FileName).Returns("test.jpg");
         mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
 
-        _userRepoMock.Setup(r => r.GetUserByUsername("uniqueuser")).Returns((UserDTO?)null);
+        var createdUser = new UserDTO { Id = 1, Username = "uniqueUser", Email = "test@example.com" };
+
         _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateUserDTO>())).Returns(true);
-        _userRepoMock.Setup(r => r.GetUserByUsername("uniqueUser")).Returns(new UserDTO { Id = 1, Username = "uniqueUser" });
+        _userRepoMock.Setup(r => r.GetUserByUsername("uniqueUser")).Returns(createdUser);
         _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync("https://example.com/image.jpg");
         _authServiceMock.Setup(x => x.GenerateRefreshToken()).Returns("refresh-token");
         _authServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<UserDTO>())).Returns("access-token");
 
         // Act
         var result = _userService.CreateUser(newUser, mockFile.Object);
-        // Assert
 
-        Assert.True(result != null);
-        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateUserDTO>(u => u.Username == "uniqueUser")), Times.Once);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("access-token", result.AccessToken);
+        Assert.Equal("refresh-token", result.RefreshToken);
+        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateUserDTO>(u => 
+            u.Username == "uniqueUser" && 
+            u.Password != "pass" && // Should be hashed
+            u.ProfilePictureURL == "https://example.com/image.jpg" &&
+            u.RefreshToken == "refresh-token")), Times.Once);
+        _authServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
+        _authServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<UserDTO>()), Times.Once);
+    }
+
+    [Fact]
+    public void CreateUser_CreatesUserWithNullProfilePicture_WhenNoFile()
+    {
+        // Arrange
+        var newUser = new CreateUserDTO { Username = "uniqueUser", Password = "pass", Email = "test@example.com" };
+        var createdUser = new UserDTO { Id = 1, Username = "uniqueUser", Email = "test@example.com" };
+
+        _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateUserDTO>())).Returns(true);
+        _userRepoMock.Setup(r => r.GetUserByUsername("uniqueUser")).Returns(createdUser);
+        _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync((string?)null);
+        _authServiceMock.Setup(x => x.GenerateRefreshToken()).Returns("refresh-token");
+        _authServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<UserDTO>())).Returns("access-token");
+
+        // Act
+        var result = _userService.CreateUser(newUser, null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("access-token", result.AccessToken);
+        Assert.Equal("refresh-token", result.RefreshToken);
+        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateUserDTO>(u => 
+            u.Username == "uniqueUser" && 
+            u.Password != "pass" && // Should be hashed
+            u.ProfilePictureURL == null)), Times.Once);
+    }
+
+    [Fact]
+    public void CreateUserSimple_CreatesUserWithoutProfilePicture()
+    {
+        // Arrange
+        var newUser = new CreateUserSimpleDTO { Username = "simpleUser", Password = "pass", Email = "simple@example.com" };
+        var createdUser = new UserDTO { Id = 1, Username = "simpleUser", Email = "simple@example.com" };
+
+        _userRepoMock.Setup(r => r.CreateUser(It.IsAny<CreateUserDTO>())).Returns(true);
+        _userRepoMock.Setup(r => r.GetUserByUsername("simpleUser")).Returns(createdUser);
+        _authServiceMock.Setup(x => x.GenerateRefreshToken()).Returns("refresh-token");
+        _authServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<UserDTO>())).Returns("access-token");
+
+        // Act
+        var result = _userService.CreateUserSimple(newUser);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("access-token", result.AccessToken);
+        Assert.Equal("refresh-token", result.RefreshToken);
+        _userRepoMock.Verify(r => r.CreateUser(It.Is<CreateUserDTO>(u => 
+            u.Username == "simpleUser" && 
+            u.Email == "simple@example.com" &&
+            u.Password != "pass" && // Should be hashed
+            u.ProfilePictureURL == null &&
+            u.RefreshToken == "refresh-token")), Times.Once);
+        _authServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
+        _authServiceMock.Verify(x => x.GenerateAccessToken(It.IsAny<UserDTO>()), Times.Once);
+    }
+
+    [Fact]
+    public void PatchUser_ReturnsTrue_WhenUpdateSucceedsWithPassword()
+    {
+        // Arrange
+        var userId = 1;
+        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.Length).Returns(1024L);
+        mockFile.Setup(f => f.FileName).Returns("test.jpg");
+        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
+        _userRepoMock.Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>())).Returns(true);
+        _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync("https://example.com/new-image.jpg");
+
+        // Act
+        var result = _userService.PatchUser(userId, updateDto, mockFile.Object);
+
+        // Assert
+        Assert.True(result);
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(dto => 
+            dto.Username == "updated" && 
+            !string.IsNullOrWhiteSpace(dto.Password) && 
+            dto.Password != "newpass" && // Should be hashed
+            dto.ProfilePictureURL == "https://example.com/new-image.jpg")), Times.Once);
+    }
+
+    [Fact]
+    public void PatchUser_ReturnsTrue_WhenUpdateSucceedsWithoutPassword()
+    {
+        // Arrange
+        var userId = 1;
+        var updateDto = new PatchUserDTO { Username = "updated" }; // No password
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.Length).Returns(1024L);
+        mockFile.Setup(f => f.FileName).Returns("test.jpg");
+        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
+        _userRepoMock.Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>())).Returns(true);
+        _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync("https://example.com/new-image.jpg");
+
+        // Act
+        var result = _userService.PatchUser(userId, updateDto, mockFile.Object);
+
+        // Assert
+        Assert.True(result);
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(dto => 
+            dto.Username == "updated" && 
+            string.IsNullOrWhiteSpace(dto.Password) && 
+            dto.ProfilePictureURL == "https://example.com/new-image.jpg")), Times.Once);
+    }
+
+    [Fact]
+    public void PatchUser_ReturnsFalse_WhenUserNotFound()
+    {
+        // Arrange
+        var userId = 999;
+        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.Length).Returns(1024L);
+        mockFile.Setup(f => f.FileName).Returns("test.jpg");
+        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns((UserDTO?)null);
+
+        // Act
+        var result = _userService.PatchUser(userId, updateDto, mockFile.Object);
+
+        // Assert
+        Assert.False(result);
+        _userRepoMock.Verify(r => r.GetUserById(userId), Times.Once);
+        _userRepoMock.Verify(r => r.PatchUser(It.IsAny<int>(), It.IsAny<PatchUserDTO>()), Times.Never);
+        _imageClientMock.Verify(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public void PatchUser_ReturnsFalse_WhenUpdateFails()
+    {
+        // Arrange
+        var userId = 2;
+        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
+        var mockFile = new Mock<IFormFile>();
+        mockFile.Setup(f => f.Length).Returns(1024L);
+        mockFile.Setup(f => f.FileName).Returns("test.jpg");
+        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
+
+        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
+        _userRepoMock.Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>())).Returns(false);
+        _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync("https://example.com/image.jpg");
+
+        // Act
+        var result = _userService.PatchUser(userId, updateDto, mockFile.Object);
+
+        // Assert
+        Assert.False(result);
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>()), Times.Once);
+    }
+
+    [Fact]
+    public void GetUserByUsername_ReturnsUserWithStatistics_WhenFound()
+    {
+        // Arrange
+        var expectedUser = new UserDTO { Id = 1, Username = "testuser" };
+        _userRepoMock.Setup(r => r.GetUserByUsername("testuser")).Returns(expectedUser);
+        _observationRepoMock.Setup(r => r.GetTotalObservationsByUser(1)).Returns(5);
+        _observationRepoMock.Setup(r => r.GetUniqueSpeciesCountByUser(1)).Returns(3);
+
+        // Act
+        var result = _userService.GetUserByUsername("TestUser"); // Should be converted to lowercase
+
+        // Assert
+        Assert.Equal(expectedUser, result);
+        Assert.Equal(5, result.TotalObservations);
+        Assert.Equal(3, result.UniqueSpeciesObserved);
+        _userRepoMock.Verify(r => r.GetUserByUsername("testuser"), Times.Once);
+    }
+
+    [Fact]
+    public void GetUserByUsername_ReturnsNull_WhenNotFound()
+    {
+        // Arrange
+        _userRepoMock.Setup(r => r.GetUserByUsername("nonexistent")).Returns((UserDTO?)null);
+
+        // Act
+        var result = _userService.GetUserByUsername("NonExistent");
+
+        // Assert
+        Assert.Null(result);
+        _userRepoMock.Verify(r => r.GetUserByUsername("nonexistent"), Times.Once);
+        _observationRepoMock.Verify(r => r.GetTotalObservationsByUser(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public void GetUserByRefreshToken_ReturnsUserWithStatistics_WhenFound()
+    {
+        // Arrange
+        var expectedUser = new UserDTO { Id = 1, Username = "testuser" };
+        _userRepoMock.Setup(r => r.GetUserByRefreshToken("valid-token")).Returns(expectedUser);
+        _observationRepoMock.Setup(r => r.GetTotalObservationsByUser(1)).Returns(5);
+        _observationRepoMock.Setup(r => r.GetUniqueSpeciesCountByUser(1)).Returns(3);
+
+        // Act
+        var result = _userService.GetUserByRefreshToken("valid-token");
+
+        // Assert
+        Assert.Equal(expectedUser, result);
+        Assert.Equal(5, result.TotalObservations);
+        Assert.Equal(3, result.UniqueSpeciesObserved);
+        _userRepoMock.Verify(r => r.GetUserByRefreshToken("valid-token"), Times.Once);
+    }
+
+    [Fact]
+    public void GetUserByRefreshToken_ReturnsNull_WhenNotFound()
+    {
+        // Arrange
+        _userRepoMock.Setup(r => r.GetUserByRefreshToken("invalid-token")).Returns((UserDTO?)null);
+
+        // Act
+        var result = _userService.GetUserByRefreshToken("invalid-token");
+
+        // Assert
+        Assert.Null(result);
+        _userRepoMock.Verify(r => r.GetUserByRefreshToken("invalid-token"), Times.Once);
+        _observationRepoMock.Verify(r => r.GetTotalObservationsByUser(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public void GetUserByEmail_ReturnsUserWithStatistics_WhenFound()
+    {
+        // Arrange
+        var expectedUser = new UserDTO { Id = 1, Username = "testuser", Email = "test@example.com" };
+        _userRepoMock.Setup(r => r.GetUserByEmail("test@example.com")).Returns(expectedUser);
+        _observationRepoMock.Setup(r => r.GetTotalObservationsByUser(1)).Returns(5);
+        _observationRepoMock.Setup(r => r.GetUniqueSpeciesCountByUser(1)).Returns(3);
+
+        // Act
+        var result = _userService.GetUserByEmail("Test@Example.com"); // Should be converted to lowercase
+
+        // Assert
+        Assert.Equal(expectedUser, result);
+        Assert.Equal(5, result.TotalObservations);
+        Assert.Equal(3, result.UniqueSpeciesObserved);
+        _userRepoMock.Verify(r => r.GetUserByEmail("test@example.com"), Times.Once);
+    }
+
+    [Fact]
+    public void GetUserByEmail_ReturnsNull_WhenNotFound()
+    {
+        // Arrange
+        _userRepoMock.Setup(r => r.GetUserByEmail("nonexistent@example.com")).Returns((UserDTO?)null);
+
+        // Act
+        var result = _userService.GetUserByEmail("NonExistent@Example.com");
+
+        // Assert
+        Assert.Null(result);
+        _userRepoMock.Verify(r => r.GetUserByEmail("nonexistent@example.com"), Times.Once);
+        _observationRepoMock.Verify(r => r.GetTotalObservationsByUser(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
@@ -114,57 +412,51 @@ public class UserServiceTests
     }
 
     [Fact]
-    public void PatchUser_ReturnsTrue_WhenUpdateSucceeds()
+    public void VerifyPassword_ReturnsFalse_ForInvalidPassword()
     {
         // Arrange
-        var userId = 1;
-        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
-        var mockFile = new Mock<IFormFile>();
-        mockFile.Setup(f => f.Length).Returns(1024L);
-        mockFile.Setup(f => f.FileName).Returns("test.jpg");
-        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
-
-        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
-        _userRepoMock
-            .Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>()))
-            .Returns(true);
-        _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync("https://example.com/image.jpg");
+        var password = "securePassword";
+        var wrongPassword = "wrongPassword";
+        var hasher = new PasswordHasher<object>();
+        var hashed = hasher.HashPassword(null, password);
 
         // Act
-        var result = _userService.PatchUser(userId, updateDto, mockFile.Object);
-
-        // Assert
-        Assert.True(result);
-        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(
-            dto => !string.IsNullOrWhiteSpace(dto.Password) && dto.Username == "updated"
-        )), Times.Once);
-    }
-
-    [Fact]
-    public void PatchUser_ReturnsFalse_WhenUpdateFails()
-    {
-        // Arrange
-        var userId = 2;
-        var updateDto = new PatchUserDTO { Username = "updated", Password = "newpass" };
-        var mockFile = new Mock<IFormFile>();
-        mockFile.Setup(f => f.Length).Returns(1024L);
-        mockFile.Setup(f => f.FileName).Returns("test.jpg");
-        mockFile.Setup(f => f.OpenReadStream()).Returns(new MemoryStream());
-
-        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
-        _userRepoMock
-            .Setup(r => r.PatchUser(userId, It.IsAny<PatchUserDTO>()))
-            .Returns(false);
-        _imageClientMock.Setup(x => x.UploadImageAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync("https://example.com/image.jpg");
-
-        // Act
-        var result = _userService.PatchUser(userId, updateDto, mockFile.Object);
+        var result = _userService.VerifyPassword(wrongPassword, hashed);
 
         // Assert
         Assert.False(result);
-        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(
-            dto => !string.IsNullOrWhiteSpace(dto.Password) && dto.Username == "updated"
-        )), Times.Once);
+    }
+
+    [Fact]
+    public void VerifyPassword_ReturnsFalse_ForEmptyPassword()
+    {
+        // Arrange
+        var password = "";
+        var hasher = new PasswordHasher<object>();
+        var hashed = hasher.HashPassword(null, "somePassword");
+
+        // Act
+        var result = _userService.VerifyPassword(password, hashed);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void UpdateRefreshToken_UpdatesUserWithNewToken()
+    {
+        // Arrange
+        int userId = 1;
+        string token = "new-refresh-token";
+        DateTime expiry = DateTime.UtcNow.AddDays(7);
+
+        // Act
+        _userService.UpdateRefreshToken(userId, token, expiry);
+
+        // Assert
+        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(dto =>
+            dto.RefreshToken == token && 
+            dto.RefreshTokenExpiry == expiry)), Times.Once);
     }
 
     [Fact]
@@ -188,28 +480,27 @@ public class UserServiceTests
         // Arrange
         int userId = 3;
         _userRepoMock.Setup(r => r.DeleteUser(userId)).Returns(false);
+        
         // Act
         var result = _userService.DeleteUser(userId);
+        
         // Assert
         Assert.False(result);
         _userRepoMock.Verify(r => r.DeleteUser(userId), Times.Once);
     }
 
     [Fact]
-    public void UpdateRefreshToken_ValidUser_UpdatesToken()
+    public void DeleteUser_ReturnsFalse_WhenDeleteFails()
     {
         // Arrange
-        int userId = 1;
-        string token = "new-token";
-        DateTime expiry = DateTime.UtcNow.AddDays(7);
-        _userRepoMock.Setup(r => r.GetUserById(userId)).Returns(new UserDTO { Id = userId });
-
+        int userId = 4;
+        _userRepoMock.Setup(r => r.DeleteUser(userId)).Returns(false);
+        
         // Act
-        _userService.UpdateRefreshToken(userId, token, expiry);
-
+        var result = _userService.DeleteUser(userId);
+        
         // Assert
-        _userRepoMock.Verify(r => r.PatchUser(userId, It.Is<PatchUserDTO>(dto =>
-            dto.RefreshToken == token && dto.RefreshTokenExpiry == expiry
-        )), Times.Once);
+        Assert.False(result);
+        _userRepoMock.Verify(r => r.DeleteUser(userId), Times.Once);
     }
 }
