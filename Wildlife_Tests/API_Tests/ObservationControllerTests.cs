@@ -77,6 +77,20 @@ public class ObservationControllerTests : IClassFixture<CustomWebApplicationFact
     {
         // Arrange
         var (userId, username, email) = await CreateTestUserAsync();
+        var token = await GetAuthTokenAsync(username, "password123");
+        var speciesId = await CreateTestSpeciesAsync();
+        SetAuthToken(token);
+
+        // Create an observation for the user
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(speciesId.ToString()), "SpeciesId");
+        form.Add(new StringContent("Test observation"), "Body");
+        form.Add(new StringContent(DateTime.UtcNow.ToString("yyyy-MM-dd")), "DateObserved");
+        form.Add(new StringContent("52.3676"), "Latitude");
+        form.Add(new StringContent("4.9041"), "Longitude");
+
+        var createResponse = await _client.PostAsync("/observations", form);
+        createResponse.EnsureSuccessStatusCode();
 
         // Act
         var response = await _client.GetAsync($"/observations/GetAllFromUser/{userId}");
@@ -85,6 +99,7 @@ public class ObservationControllerTests : IClassFixture<CustomWebApplicationFact
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var observations = await response.Content.ReadFromJsonAsync<List<ObservationDTO>>();
         Assert.NotNull(observations);
+        Assert.True(observations.Count > 0);
     }
 
     [Fact]
@@ -271,13 +286,36 @@ public class ObservationControllerTests : IClassFixture<CustomWebApplicationFact
     [Fact]
     public async Task GetObservation_WithValidId_ReturnsOk()
     {
+        // Arrange - Create user and observation first
+        var (userId, username, email) = await CreateTestUserAsync();
+        var token = await GetAuthTokenAsync(username, "password123");
+        var speciesId = await CreateTestSpeciesAsync();
+        SetAuthToken(token);
+
+        // Create observation
+        using var createForm = new MultipartFormDataContent();
+        createForm.Add(new StringContent(speciesId.ToString()), "SpeciesId");
+        createForm.Add(new StringContent("Test observation"), "Body");
+        createForm.Add(new StringContent(DateTime.UtcNow.ToString("yyyy-MM-dd")), "DateObserved");
+        createForm.Add(new StringContent("52.3676"), "Latitude");
+        createForm.Add(new StringContent("4.9041"), "Longitude");
+
+        var createResponse = await _client.PostAsync("/observations", createForm);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Get the created observation ID
+        var observationsResponse = await _client.GetAsync($"/observations/GetAllFromUser/{userId}");
+        var observations = await observationsResponse.Content.ReadFromJsonAsync<List<ObservationDTO>>();
+        var observationId = observations?.FirstOrDefault()?.Id ?? 1;
+
         // Act
-        var response = await _client.GetAsync("/observations/1");
+        var response = await _client.GetAsync($"/observations/{observationId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var observation = await response.Content.ReadFromJsonAsync<ObservationDTO>();
         Assert.NotNull(observation);
+        Assert.Equal(observationId, observation.Id);
     }
 
     [Fact]
