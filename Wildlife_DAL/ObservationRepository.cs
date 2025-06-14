@@ -3,6 +3,7 @@ using Wildlife_BLL.DTO;
 using Wildlife_BLL.Interfaces;
 using Wildlife_DAL.Data;
 using Wildlife_DAL.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Wildlife_DAL
 {
@@ -17,44 +18,11 @@ namespace Wildlife_DAL
         public List<ObservationDTO> GetObservationsByUser(int userId)
         {
             var observations = _context.Observations
+                .Include(o => o.User)
+                .Include(o => o.Species)
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.DatePosted)
-                .Select(o => new ObservationDTO
-                {
-                    Id = o.Id,
-                    SpeciesId = o.SpeciesId,
-                    UserId = o.UserId,
-                    Body = o.Body,
-                    DateObserved = o.DateObserved,
-                    DatePosted = o.DatePosted,
-                    Latitude = o.Latitude,
-                    Longitude = o.Longitude,
-                    ImageUrl = o.ImageUrl,
-                    User = new MinimalUserDTO
-                    {
-                        Username = o.User.Username,
-                        ProfilePicture = o.User.ProfilePicture,
-                    },
-                    Species = new SpeciesDTO
-                    {
-                        Id = o.Species.Id,
-                        CommonName = o.Species.CommonName,
-                        ScientificName = o.Species.ScientificName,
-                        InaturalistTaxonId = o.Species.InaturalistTaxonId,
-                        ImageUrl = o.Species.ImageUrl,
-                        IconicTaxonName = o.Species.IconicTaxonName,
-                        Taxonomy = new TaxonomyDTO
-                        {
-                            IconicTaxon = o.Species.IconicTaxonName,
-                            Kingdom = o.Species.KingdomName,
-                            Phylum = o.Species.PhylumName,
-                            Class = o.Species.ClassName,
-                            Order = o.Species.OrderName,
-                            Family = o.Species.FamilyName,
-                            Genus = o.Species.GenusName,
-                        }
-                    }
-                })
+                .Select(MapToObservationDTO)
                 .ToList();
             return observations;
         }
@@ -112,42 +80,10 @@ namespace Wildlife_DAL
         public ObservationDTO? GetObservationById(int id)
         {
             var observation = _context.Observations
+                .Include(o => o.User)
+                .Include(o => o.Species)
                 .Where(o => o.Id == id)
-                .Select(o => new ObservationDTO
-                {
-                    Id = o.Id,
-                    SpeciesId = o.SpeciesId,
-                    UserId = o.UserId,
-                    Body = o.Body,
-                    DateObserved = o.DateObserved,
-                    Latitude = o.Latitude,
-                    Longitude = o.Longitude,
-                    ImageUrl = o.ImageUrl,
-                    User = new MinimalUserDTO
-                    {
-                        Username = o.User.Username,
-                        ProfilePicture = o.User.ProfilePicture,
-                    },
-                    Species = new SpeciesDTO
-                    {
-                        Id = o.Species.Id,
-                        CommonName = o.Species.CommonName,
-                        ScientificName = o.Species.ScientificName,
-                        InaturalistTaxonId = o.Species.InaturalistTaxonId,
-                        ImageUrl = o.Species.ImageUrl,
-                        IconicTaxonName = o.Species.IconicTaxonName,
-                        Taxonomy = new TaxonomyDTO
-                        {
-                            IconicTaxon = o.Species.IconicTaxonName,
-                            Kingdom = o.Species.KingdomName,
-                            Phylum = o.Species.PhylumName,
-                            Class = o.Species.ClassName,
-                            Order = o.Species.OrderName,
-                            Family = o.Species.FamilyName,
-                            Genus = o.Species.GenusName,
-                        }
-                    }
-                })
+                .Select(MapToObservationDTO)
                 .FirstOrDefault();
 
             return observation;
@@ -180,16 +116,7 @@ namespace Wildlife_DAL
                 observation.Body = dto.Body;
             if (dto.DateObserved != null)
             {
-                var dateObserved = dto.DateObserved.Value;
-                if (dateObserved.Kind == DateTimeKind.Unspecified)
-                {
-                    dateObserved = DateTime.SpecifyKind(dateObserved, DateTimeKind.Local).ToUniversalTime();
-                }
-                else if (dateObserved.Kind == DateTimeKind.Local)
-                {
-                    dateObserved = dateObserved.ToUniversalTime();
-                }
-                observation.DateObserved = dateObserved;
+                observation.DateObserved = ConvertToUtc(dto.DateObserved);
             }
             if (dto.Latitude != null)
                 observation.Latitude = dto.Latitude.Value;
@@ -220,7 +147,10 @@ namespace Wildlife_DAL
 
         public List<ObservationDTO> GetAllObservations(int limit = 30, int? currentUserId = null, bool excludeCurrentUser = false)
         {
-            var query = _context.Observations.AsQueryable();
+            var query = _context.Observations
+                .Include(o => o.User)
+                .Include(o => o.Species)
+                .AsQueryable();
             
             // Filter out current user's observations if requested
             if (excludeCurrentUser && currentUserId.HasValue)
@@ -231,44 +161,74 @@ namespace Wildlife_DAL
             var observations = query
                 .OrderByDescending(o => o.DatePosted)
                 .Take(limit)
-                .Select(o => new ObservationDTO
-                {
-                    Id = o.Id,
-                    SpeciesId = o.SpeciesId,
-                    UserId = o.UserId,
-                    Body = o.Body,
-                    DateObserved = o.DateObserved,
-                    DatePosted = o.DatePosted,
-                    Latitude = o.Latitude,
-                    Longitude = o.Longitude,
-                    ImageUrl = o.ImageUrl,
-                    User = new MinimalUserDTO
-                    {
-                        Username = o.User.Username,
-                        ProfilePicture = o.User.ProfilePicture,
-                    },
-                    Species = new SpeciesDTO
-                    {
-                        Id = o.Species.Id,
-                        CommonName = o.Species.CommonName,
-                        ScientificName = o.Species.ScientificName,
-                        InaturalistTaxonId = o.Species.InaturalistTaxonId,
-                        ImageUrl = o.Species.ImageUrl,
-                        IconicTaxonName = o.Species.IconicTaxonName,
-                        Taxonomy = new TaxonomyDTO
-                        {
-                            IconicTaxon = o.Species.IconicTaxonName,
-                            Kingdom = o.Species.KingdomName,
-                            Phylum = o.Species.PhylumName,
-                            Class = o.Species.ClassName,
-                            Order = o.Species.OrderName,
-                            Family = o.Species.FamilyName,
-                            Genus = o.Species.GenusName,
-                        }
-                    }
-                })
+                .Select(MapToObservationDTO)
                 .ToList();
             return observations;
+        }
+
+        // Helper method to map ObservationEntity to ObservationDTO
+        private static ObservationDTO MapToObservationDTO(ObservationEntity o)
+        {
+            return new ObservationDTO
+            {
+                Id = o.Id,
+                SpeciesId = o.SpeciesId,
+                UserId = o.UserId,
+                Body = o.Body,
+                DateObserved = o.DateObserved,
+                DatePosted = o.DatePosted,
+                Latitude = o.Latitude,
+                Longitude = o.Longitude,
+                ImageUrl = o.ImageUrl,
+                User = o.User != null ? new MinimalUserDTO
+                {
+                    Username = o.User.Username,
+                    ProfilePicture = o.User.ProfilePicture,
+                } : null,
+                Species = o.Species != null ? new SpeciesDTO
+                {
+                    Id = o.Species.Id,
+                    CommonName = o.Species.CommonName,
+                    ScientificName = o.Species.ScientificName,
+                    InaturalistTaxonId = o.Species.InaturalistTaxonId,
+                    ImageUrl = o.Species.ImageUrl,
+                    IconicTaxonName = o.Species.IconicTaxonName,
+                    Taxonomy = new TaxonomyDTO
+                    {
+                        IconicTaxon = o.Species.IconicTaxonName,
+                        Kingdom = o.Species.KingdomName,
+                        Phylum = o.Species.PhylumName,
+                        Class = o.Species.ClassName,
+                        Order = o.Species.OrderName,
+                        Family = o.Species.FamilyName,
+                        Genus = o.Species.GenusName,
+                    }
+                } : null
+            };
+        }
+
+        // Helper method to convert DateTime to UTC
+        private static DateTime? ConvertToUtc(DateTime? date)
+        {
+            if (!date.HasValue)
+                return null;
+
+            var dateValue = date.Value;
+            if (dateValue.Kind == DateTimeKind.Unspecified)
+            {
+                // Assume local time and convert to UTC
+                return DateTime.SpecifyKind(dateValue, DateTimeKind.Local).ToUniversalTime();
+            }
+            else if (dateValue.Kind == DateTimeKind.Local)
+            {
+                // Convert local to UTC
+                return dateValue.ToUniversalTime();
+            }
+            else
+            {
+                // If already UTC, use as is
+                return dateValue;
+            }
         }
     }
 }
