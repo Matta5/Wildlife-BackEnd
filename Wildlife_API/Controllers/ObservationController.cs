@@ -104,37 +104,15 @@ namespace Wildlife_BackEnd.Controllers
             if (userId == null)
                 return Unauthorized("User not authenticated");
 
-            // Debug: Check if model binding worked
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-                return BadRequest(new { message = "Model validation failed", errors = errors });
-            }
 
-            // Debug: Log the received data
-            Console.WriteLine($"Received DTO - SpeciesId: {dto.SpeciesId}, Body: {dto.Body}, DateObserved: {dto.DateObserved}, Lat: {dto.Latitude}, Lng: {dto.Longitude}");
-            Console.WriteLine($"Image received: {image != null}, Image name: {image?.FileName}");
-
-            // Validate species exists
             var speciesExists = await _context.Species.AnyAsync(s => s.Id == int.Parse(dto.SpeciesId));
             if (!speciesExists)
             {
                 return BadRequest(new { message = $"Species with ID {dto.SpeciesId} does not exist" });
             }
 
-            // Validate user exists
-            var userExists = await _context.Users.AnyAsync(u => u.Id == userId.Value);
-            if (!userExists)
-            {
-                return BadRequest(new { message = $"User with ID {userId.Value} does not exist" });
-            }
-
             try
             {
-                // Map form DTO to service DTO with proper type conversion
                 var createObservationDTO = dto.ToCreateObservationDTO(userId.Value);
 
                 await _observationService.CreateObservation(userId.Value, createObservationDTO, image);
@@ -189,7 +167,10 @@ namespace Wildlife_BackEnd.Controllers
                 return NotFound("Observation not found");
 
             if (observation.UserId != userId.Value)
-                return Forbid("You do not have permission to delete this observation");
+            {
+                Response.Headers.Add("X-Error-Message", "You do not have permission to delete this observation");
+                return Forbid();
+            }
 
             var result = _observationService.DeleteObservation(id);
 
@@ -211,7 +192,10 @@ namespace Wildlife_BackEnd.Controllers
                 return NotFound("Observation not found");
 
             if (observation.UserId != userId.Value)
-                return Forbid("You do not have permission to update this observation");
+            {
+                Response.Headers.Add("X-Error-Message", "You do not have permission to update this observation");
+                return Forbid();
+            }
 
             var result = _observationService.PatchObservation(id, dto);
             return Ok(new { message = "Observation updated successfully" });
@@ -230,7 +214,10 @@ namespace Wildlife_BackEnd.Controllers
                 return NotFound("Observation not found");
 
             if (observation.UserId != userId.Value)
-                return Forbid("You do not have permission to update this observation");
+            {
+                Response.Headers.Add("X-Error-Message", "You do not have permission to update this observation");
+                return Forbid();
+            }
 
             try
             {

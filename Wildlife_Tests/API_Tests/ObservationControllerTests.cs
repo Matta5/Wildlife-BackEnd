@@ -387,6 +387,123 @@ public class ObservationControllerTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
+    public async Task PatchObservation_WithValidData_ReturnsOk()
+    {
+        // Arrange - Create user and observation first
+        var (userId, username, email) = await CreateTestUserAsync();
+        var token = await GetAuthTokenAsync(username, "password123");
+        var speciesId = await CreateTestSpeciesAsync();
+        SetAuthToken(token);
+
+        // Create observation
+        using var createForm = new MultipartFormDataContent();
+        createForm.Add(new StringContent(speciesId.ToString()), "SpeciesId");
+        createForm.Add(new StringContent("Test observation"), "Body");
+        createForm.Add(new StringContent(DateTime.UtcNow.ToString("yyyy-MM-dd")), "DateObserved");
+        createForm.Add(new StringContent("52.3676"), "Latitude");
+        createForm.Add(new StringContent("4.9041"), "Longitude");
+
+        var createResponse = await _client.PostAsync("/observations", createForm);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Get the created observation ID
+        var observationsResponse = await _client.GetAsync($"/observations/GetAllFromUser/{userId}");
+        var observations = await observationsResponse.Content.ReadFromJsonAsync<List<ObservationDTO>>();
+        var observationId = observations?.FirstOrDefault()?.Id ?? 1;
+
+        // Create patch data
+        var patchData = new PatchObservationDTO
+        {
+            Body = "Updated observation body",
+            DateObserved = DateTime.UtcNow.AddDays(-1),
+            Latitude = 52.3677,
+            Longitude = 4.9042
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync($"/observations/{observationId}", patchData);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        Assert.NotNull(result);
+
+        // Verify the changes
+        var getResponse = await _client.GetAsync($"/observations/{observationId}");
+        var updatedObservation = await getResponse.Content.ReadFromJsonAsync<ObservationDTO>();
+        Assert.NotNull(updatedObservation);
+        Assert.Equal(patchData.Body, updatedObservation.Body);
+        Assert.Equal(patchData.Latitude, updatedObservation.Latitude);
+        Assert.Equal(patchData.Longitude, updatedObservation.Longitude);
+    }
+
+    [Fact]
+    public async Task PatchObservation_WithInvalidId_ReturnsNotFound()
+    {
+        // Arrange
+        var (userId, username, email) = await CreateTestUserAsync();
+        var token = await GetAuthTokenAsync(username, "password123");
+        SetAuthToken(token);
+
+        var patchData = new PatchObservationDTO
+        {
+            Body = "Updated observation"
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync("/observations/99999", patchData);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Observation not found", content);
+    }
+
+    [Fact]
+    public async Task PatchObservation_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange - Create first user and observation
+        var (userId1, username1, email1) = await CreateTestUserAsync();
+        var token1 = await GetAuthTokenAsync(username1, "password123");
+        var speciesId = await CreateTestSpeciesAsync();
+        SetAuthToken(token1);
+
+        // Create observation as first user
+        using var createForm = new MultipartFormDataContent();
+        createForm.Add(new StringContent(speciesId.ToString()), "SpeciesId");
+        createForm.Add(new StringContent("Test observation"), "Body");
+        createForm.Add(new StringContent(DateTime.UtcNow.ToString("yyyy-MM-dd")), "DateObserved");
+        createForm.Add(new StringContent("52.3676"), "Latitude");
+        createForm.Add(new StringContent("4.9041"), "Longitude");
+
+        var createResponse = await _client.PostAsync("/observations", createForm);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Get the created observation ID
+        var observationsResponse = await _client.GetAsync($"/observations/GetAllFromUser/{userId1}");
+        var observations = await observationsResponse.Content.ReadFromJsonAsync<List<ObservationDTO>>();
+        var observationId = observations?.FirstOrDefault()?.Id ?? 1;
+
+        // Create and login as second user
+        var (userId2, username2, email2) = await CreateTestUserAsync();
+        var token2 = await GetAuthTokenAsync(username2, "password123");
+        SetAuthToken(token2);
+
+        // Try to patch first user's observation
+        var patchData = new PatchObservationDTO
+        {
+            Body = "Updated by another user"
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync($"/observations/{observationId}", patchData);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Contains("You do not have permission", response.Headers.GetValues("X-Error-Message").First());
+    }
+
+    [Fact]
     public async Task UpdateObservationImage_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Arrange
@@ -400,5 +517,123 @@ public class ObservationControllerTests : IClassFixture<CustomWebApplicationFact
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateObservationImage_WithValidData_ReturnsOk()
+    {
+        // Arrange - Create user and observation first
+        var (userId, username, email) = await CreateTestUserAsync();
+        var token = await GetAuthTokenAsync(username, "password123");
+        var speciesId = await CreateTestSpeciesAsync();
+        SetAuthToken(token);
+
+        // Create observation
+        using var createForm = new MultipartFormDataContent();
+        createForm.Add(new StringContent(speciesId.ToString()), "SpeciesId");
+        createForm.Add(new StringContent("Test observation"), "Body");
+        createForm.Add(new StringContent(DateTime.UtcNow.ToString("yyyy-MM-dd")), "DateObserved");
+        createForm.Add(new StringContent("52.3676"), "Latitude");
+        createForm.Add(new StringContent("4.9041"), "Longitude");
+
+        var createResponse = await _client.PostAsync("/observations", createForm);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Get the created observation ID
+        var observationsResponse = await _client.GetAsync($"/observations/GetAllFromUser/{userId}");
+        var observations = await observationsResponse.Content.ReadFromJsonAsync<List<ObservationDTO>>();
+        var observationId = observations?.FirstOrDefault()?.Id ?? 1;
+
+        // Create a valid JPEG image
+        var imageBytes = new byte[10 * 1024]; // 10KB image
+        for (int i = 0; i < imageBytes.Length; i++)
+        {
+            imageBytes[i] = (byte)(i % 256);
+        }
+        // Add JPEG magic number
+        imageBytes[0] = 0xFF;
+        imageBytes[1] = 0xD8;
+        imageBytes[imageBytes.Length - 2] = 0xFF;
+        imageBytes[imageBytes.Length - 1] = 0xD9;
+
+        // Create image update form
+        using var imageForm = new MultipartFormDataContent();
+        var imageContent = new ByteArrayContent(imageBytes);
+        imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+        imageForm.Add(imageContent, "image", "test.jpg");
+
+        // Act
+        var response = await _client.PatchAsync($"/observations/{observationId}/image", imageForm);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task UpdateObservationImage_WithInvalidId_ReturnsNotFound()
+    {
+        // Arrange
+        var (userId, username, email) = await CreateTestUserAsync();
+        var token = await GetAuthTokenAsync(username, "password123");
+        SetAuthToken(token);
+
+        using var imageForm = new MultipartFormDataContent();
+        var imageContent = new ByteArrayContent(new byte[] { 1, 2, 3, 4 });
+        imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+        imageForm.Add(imageContent, "image", "test.jpg");
+
+        // Act
+        var response = await _client.PatchAsync("/observations/99999/image", imageForm);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Observation not found", content);
+    }
+
+    [Fact]
+    public async Task UpdateObservationImage_WithoutPermission_ReturnsForbidden()
+    {
+        // Arrange - Create first user and observation
+        var (userId1, username1, email1) = await CreateTestUserAsync();
+        var token1 = await GetAuthTokenAsync(username1, "password123");
+        var speciesId = await CreateTestSpeciesAsync();
+        SetAuthToken(token1);
+
+        // Create observation as first user
+        using var createForm = new MultipartFormDataContent();
+        createForm.Add(new StringContent(speciesId.ToString()), "SpeciesId");
+        createForm.Add(new StringContent("Test observation"), "Body");
+        createForm.Add(new StringContent(DateTime.UtcNow.ToString("yyyy-MM-dd")), "DateObserved");
+        createForm.Add(new StringContent("52.3676"), "Latitude");
+        createForm.Add(new StringContent("4.9041"), "Longitude");
+
+        var createResponse = await _client.PostAsync("/observations", createForm);
+        createResponse.EnsureSuccessStatusCode();
+
+        // Get the created observation ID
+        var observationsResponse = await _client.GetAsync($"/observations/GetAllFromUser/{userId1}");
+        var observations = await observationsResponse.Content.ReadFromJsonAsync<List<ObservationDTO>>();
+        var observationId = observations?.FirstOrDefault()?.Id ?? 1;
+
+        // Create and login as second user
+        var (userId2, username2, email2) = await CreateTestUserAsync();
+        var token2 = await GetAuthTokenAsync(username2, "password123");
+        SetAuthToken(token2);
+
+        // Try to update first user's observation image
+        using var imageForm = new MultipartFormDataContent();
+        var imageContent = new ByteArrayContent(new byte[] { 1, 2, 3, 4 });
+        imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+        imageForm.Add(imageContent, "image", "test.jpg");
+
+        // Act
+        var response = await _client.PatchAsync($"/observations/{observationId}/image", imageForm);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Contains("You do not have permission", response.Headers.GetValues("X-Error-Message").First());
     }
 }
