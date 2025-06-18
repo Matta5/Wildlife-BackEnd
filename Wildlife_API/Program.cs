@@ -8,6 +8,8 @@ using dotenv.net;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Wildlife_API.Hubs;
+using Wildlife_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +94,12 @@ builder.Services.AddHttpClient<IExternalSpeciesClient, ExternalSpeciesClient>(cl
 builder.Services.AddHttpClient<IImageClient, ImageClient>();
 builder.Services.AddScoped<ImageService>();
 
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Register SignalR notification service
+builder.Services.AddScoped<IObservationNotificationService, SignalRNotificationService>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -107,6 +115,10 @@ if (app.Environment.IsDevelopment())
 app.UseCors(MyAllowSpecificOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map SignalR hub
+app.MapHub<ObservationHub>("/observationHub");
+
 app.MapControllers();
 app.Run();
 

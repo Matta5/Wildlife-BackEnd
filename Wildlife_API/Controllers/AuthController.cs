@@ -112,18 +112,38 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
+        // If no refresh token in cookies, just return success
+        // This handles cases where the user is already logged out
+        if (!Request.Cookies.ContainsKey("refreshToken"))
+        {
+            return Ok(new { message = "Logout successful" });
+        }
+
         var refreshToken = Request.Cookies["refreshToken"];
-        if (string.IsNullOrEmpty(refreshToken))
-            return BadRequest("No refresh token found");
+        
+        // If we have a refresh token, try to invalidate it
+        if (!string.IsNullOrEmpty(refreshToken))
+        {
+            UserDTO? user = _userService.GetUserByRefreshToken(refreshToken);
+            if (user != null)
+            {
+                _userService.UpdateRefreshToken(user.Id, refreshToken, DateTime.UtcNow);
+            }
+        }
 
-        UserDTO? user = _userService.GetUserByRefreshToken(refreshToken);
-        if (user == null)
-            return Unauthorized("Invalid refresh token");
-
-        _userService.UpdateRefreshToken(user.Id, refreshToken, DateTime.UtcNow);
-
-        Response.Cookies.Delete("token");
-        Response.Cookies.Delete("refreshToken");
+        // Always clear cookies
+        Response.Cookies.Delete("token", new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.None,
+            Secure = true
+        });
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.None,
+            Secure = true
+        });
 
         return Ok(new { message = "Logout successful" });
     }

@@ -8,11 +8,16 @@ namespace Wildlife_BLL
     {
         private readonly IObservationRepository _observationRepository;
         private readonly ImageService _imageService;
+        private readonly IObservationNotificationService _notificationService;
 
-        public ObservationService(IObservationRepository observationRepository, ImageService imageService)
+        public ObservationService(
+            IObservationRepository observationRepository,
+            ImageService imageService,
+            IObservationNotificationService notificationService)
         {
             _observationRepository = observationRepository;
             _imageService = imageService;
+            _notificationService = notificationService;
         }
 
         public async Task CreateObservation(int userId, CreateObservationDTO dto, IFormFile? imageFile = null)
@@ -35,7 +40,49 @@ namespace Wildlife_BLL
                 Longitude = dto.Longitude,
                 ImageUrl = imageUrl
             };
-            _observationRepository.CreateObservation(createEditObservationDTO);
+
+            var newObservationId = _observationRepository.CreateObservation(createEditObservationDTO);
+
+            // Get the created observation to notify clients
+            var createdObservation = _observationRepository.GetObservationById(newObservationId);
+            if (createdObservation != null)
+            {
+                await _notificationService.NotifyObservationCreated(createdObservation);
+            }
+        }
+
+        public async Task PatchObservation(int id, int userId, PatchObservationDTO patchDto, IFormFile? imageFile = null)
+        {
+            string? imageUrl = null;
+            
+            // Upload image if provided
+            if (imageFile != null)
+            {
+                imageUrl = await _imageService.UploadAsync(imageFile);
+                patchDto.ImageUrl = imageUrl;
+            }
+
+            var success = _observationRepository.PatchObservation(id, patchDto);
+
+            if (success)
+            {
+                // Get the updated observation to notify clients
+                var updatedObservation = _observationRepository.GetObservationById(id);
+                if (updatedObservation != null)
+                {
+                    await _notificationService.NotifyObservationUpdated(updatedObservation);
+                }
+            }
+        }
+
+        public async Task DeleteObservation(int id)
+        {
+            var success = _observationRepository.DeleteObservation(id);
+            
+            if (success)
+            {
+                await _notificationService.NotifyObservationDeleted(id);
+            }
         }
 
         public void CreateObservationSimple(int userId, CreateObservationSimpleDTO dto)
@@ -72,11 +119,6 @@ namespace Wildlife_BLL
             return imageUrl;
         }
 
-        public bool DeleteObservation(int id)
-        {
-            return _observationRepository.DeleteObservation(id);
-        }
-
         public ObservationDTO? GetObservationById(int id)
         {
             return _observationRepository.GetObservationById(id);
@@ -107,5 +149,4 @@ namespace Wildlife_BLL
             return _observationRepository.GetAllObservations(limit, currentUserId, excludeCurrentUser);
         }
     }
-
 }

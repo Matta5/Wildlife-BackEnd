@@ -96,7 +96,12 @@ namespace Wildlife_API.Controllers
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new { message = "User created successfully" });
+            // Return tokens in body as well for testing purposes
+            return Ok(new { 
+                message = "User created successfully",
+                accessToken = result.AccessToken,
+                refreshToken = result.RefreshToken
+            });
         }
 
         [HttpDelete]

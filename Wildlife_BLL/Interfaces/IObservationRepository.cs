@@ -4,11 +4,11 @@ namespace Wildlife_BLL.Interfaces;
 
 public interface IObservationRepository
 {
-    void CreateObservation(CreateObservationDTO observation);
-    bool DeleteObservation(int id);
-    ObservationDTO? GetObservationById(int id);
     List<ObservationDTO> GetObservationsByUser(int userId);
-    bool PatchObservation(int value, PatchObservationDTO dto);
+    int CreateObservation(CreateObservationDTO observation);
+    ObservationDTO? GetObservationById(int id);
+    bool DeleteObservation(int id);
+    bool PatchObservation(int id, PatchObservationDTO dto);
     
     // Statistics methods
     int GetTotalObservationsByUser(int userId);

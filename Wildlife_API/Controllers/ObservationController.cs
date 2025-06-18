@@ -56,46 +56,6 @@ namespace Wildlife_BackEnd.Controllers
             return Ok(observations);
         }
 
-        [HttpGet("discover")]
-        public IActionResult GetDiscoverObservations([FromQuery] int? limit = null)
-        {
-            // Ensure limit is divisible by 3, default to 30 if not specified
-            int actualLimit = 30; // Default divisible by 3
-            
-            if (limit.HasValue)
-            {
-                // Round down to nearest multiple of 3
-                actualLimit = (limit.Value / 3) * 3;
-                
-                // Ensure minimum of 3 and maximum of 300
-                actualLimit = Math.Max(3, Math.Min(300, actualLimit));
-            }
-            
-            int? currentUserId = GetUserIdFromClaims();
-            var observations = _observationService.GetAllObservations(actualLimit, currentUserId, true);
-            return Ok(observations);
-        }
-
-        [HttpGet("explore")]
-        public IActionResult GetExploreObservations([FromQuery] int? limit = null)
-        {
-            // Ensure limit is divisible by 3, default to 30 if not specified
-            int actualLimit = 30; // Default divisible by 3
-            
-            if (limit.HasValue)
-            {
-                // Round down to nearest multiple of 3
-                actualLimit = (limit.Value / 3) * 3;
-                
-                // Ensure minimum of 3 and maximum of 300
-                actualLimit = Math.Max(3, Math.Min(300, actualLimit));
-            }
-            
-            int? currentUserId = GetUserIdFromClaims();
-            var observations = _observationService.GetAllObservations(actualLimit, currentUserId, true);
-            return Ok(observations);
-        }
-
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateObservation([FromForm] CreateObservationFormDTO dto, IFormFile? image = null)
@@ -156,7 +116,7 @@ namespace Wildlife_BackEnd.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteObservation(int id)
+        public async Task<IActionResult> DeleteObservation(int id)
         {
             var userId = GetUserIdFromClaims();
             if (userId == null)
@@ -172,16 +132,13 @@ namespace Wildlife_BackEnd.Controllers
                 return Forbid();
             }
 
-            var result = _observationService.DeleteObservation(id);
-
-            if (!result)
-                return BadRequest("Failed to delete observation");
+            await _observationService.DeleteObservation(id);
             return Ok(new { message = "Observation deleted successfully" });
         }
 
         [HttpPatch("{id}")]
         [Authorize]
-        public IActionResult PatchObservation(int id, [FromBody] PatchObservationDTO dto)
+        public async Task<IActionResult> PatchObservation(int id, [FromBody] PatchObservationDTO dto)
         {
             var userId = GetUserIdFromClaims();
             if (userId == null)
@@ -197,7 +154,7 @@ namespace Wildlife_BackEnd.Controllers
                 return Forbid();
             }
 
-            var result = _observationService.PatchObservation(id, dto);
+            await _observationService.PatchObservation(id, userId.Value, dto, null);
             return Ok(new { message = "Observation updated successfully" });
         }
 

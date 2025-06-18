@@ -27,7 +27,7 @@ namespace Wildlife_DAL
             return observations;
         }
 
-        public void CreateObservation(CreateObservationDTO observation)
+        public int CreateObservation(CreateObservationDTO observation)
         {
             try
             {
@@ -68,6 +68,8 @@ namespace Wildlife_DAL
 
                 _context.Observations.Add(entity);
                 _context.SaveChanges();
+                
+                return entity.Id;
             }
             catch (Exception e)
             {
