@@ -160,15 +160,15 @@ public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Logout_WithoutRefreshToken_ReturnsBadRequest()
+    public async Task Logout_WithoutRefreshToken_ReturnsOk()
     {
         // Act
         var response = await _client.PostAsync("/auth/logout", null);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("No refresh token found", content);
+        Assert.Contains("Logout successful", content);
     }
 
     [Fact]
