@@ -12,6 +12,7 @@ public class ObservationServiceTests
 {
     private readonly Mock<IObservationRepository> _observationRepoMock;
     private readonly Mock<IImageClient> _imageClientMock;
+    private readonly Mock<IObservationNotificationService> _notificationServiceMock;
     private readonly ImageService _imageService;
     private readonly ObservationService _observationService;
 
@@ -19,8 +20,9 @@ public class ObservationServiceTests
     {
         _observationRepoMock = new Mock<IObservationRepository>();
         _imageClientMock = new Mock<IImageClient>();
+        _notificationServiceMock = new Mock<IObservationNotificationService>();
         _imageService = new ImageService(_imageClientMock.Object);
-        _observationService = new ObservationService(_observationRepoMock.Object, _imageService);
+        _observationService = new ObservationService(_observationRepoMock.Object, _imageService, _notificationServiceMock.Object);
     }
 
     [Fact]
@@ -153,33 +155,33 @@ public class ObservationServiceTests
     }
 
     [Fact]
-    public void DeleteObservation_ReturnsTrue_WhenDeleted()
+    public async Task DeleteObservation_ReturnsTrue_WhenDeleted()
     {
         // Arrange
         var observationId = 1;
         _observationRepoMock.Setup(x => x.DeleteObservation(observationId)).Returns(true);
 
         // Act
-        var result = _observationService.DeleteObservation(observationId);
+        await _observationService.DeleteObservation(observationId);
 
         // Assert
-        Assert.True(result);
         _observationRepoMock.Verify(x => x.DeleteObservation(observationId), Times.Once);
+        _notificationServiceMock.Verify(x => x.NotifyObservationDeleted(observationId), Times.Once);
     }
 
     [Fact]
-    public void DeleteObservation_ReturnsFalse_WhenNotDeleted()
+    public async Task DeleteObservation_ReturnsFalse_WhenNotDeleted()
     {
         // Arrange
         var observationId = 1;
         _observationRepoMock.Setup(x => x.DeleteObservation(observationId)).Returns(false);
 
         // Act
-        var result = _observationService.DeleteObservation(observationId);
+        await _observationService.DeleteObservation(observationId);
 
         // Assert
-        Assert.False(result);
         _observationRepoMock.Verify(x => x.DeleteObservation(observationId), Times.Once);
+        _notificationServiceMock.Verify(x => x.NotifyObservationDeleted(observationId), Times.Never);
     }
 
     [Fact]

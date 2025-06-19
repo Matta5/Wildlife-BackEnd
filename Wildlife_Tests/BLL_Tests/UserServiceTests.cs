@@ -15,6 +15,7 @@ public class UserServiceTests
     private readonly Mock<IAuthService> _authServiceMock;
     private readonly Mock<IImageClient> _imageClientMock;
     private readonly Mock<IObservationRepository> _observationRepoMock;
+    private readonly Mock<IObservationNotificationService> _notificationServiceMock;
     private readonly ImageService _imageService;
     private readonly ObservationService _observationService;
     private readonly UserService _userService;
@@ -25,8 +26,9 @@ public class UserServiceTests
         _authServiceMock = new Mock<IAuthService>();
         _imageClientMock = new Mock<IImageClient>();
         _observationRepoMock = new Mock<IObservationRepository>();
+        _notificationServiceMock = new Mock<IObservationNotificationService>();
         _imageService = new ImageService(_imageClientMock.Object);
-        _observationService = new ObservationService(_observationRepoMock.Object, _imageService);
+        _observationService = new ObservationService(_observationRepoMock.Object, _imageService, _notificationServiceMock.Object);
         _userService = new UserService(_userRepoMock.Object, _authServiceMock.Object, _imageService, _observationService);
     }
 
