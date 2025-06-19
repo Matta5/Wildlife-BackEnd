@@ -13,12 +13,6 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: 'zulu'
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -46,9 +40,6 @@ jobs:
           New-Item -Path .\.sonar\scanner -ItemType Directory -Force
           dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
 
-      - name: Install ReportGenerator
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool
-
       - name: Begin SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -70,12 +61,6 @@ jobs:
           --collect:"XPlat Code Coverage" 
           --results-directory TestResults 
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-
-      - name: Show test results directory contents
-        shell: powershell
-        run: |
-          Get-ChildItem -Recurse TestResults
-          Get-Content TestResults\*\coverage.opencover.xml -First 50
 
       - name: End SonarCloud analysis
         env:
