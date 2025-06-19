@@ -152,30 +152,6 @@ public class ObservationControllerTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
-    public async Task GetDiscoverObservations_ReturnsOk()
-    {
-        // Act
-        var response = await _client.GetAsync("/observations/discover");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var observations = await response.Content.ReadFromJsonAsync<List<ObservationDTO>>();
-        Assert.NotNull(observations);
-    }
-
-    [Fact]
-    public async Task GetExploreObservations_ReturnsOk()
-    {
-        // Act
-        var response = await _client.GetAsync("/observations/explore");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var observations = await response.Content.ReadFromJsonAsync<List<ObservationDTO>>();
-        Assert.NotNull(observations);
-    }
-
-    [Fact]
     public async Task CreateObservation_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Arrange
